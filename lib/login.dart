@@ -13,13 +13,23 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailOrUsernameController =
       TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+
+  final FocusNode emailFocus = FocusNode();
+  final FocusNode passwordFocus = FocusNode();
+
   bool _obscurePassword = true;
 
   @override
   void dispose() {
     emailOrUsernameController.dispose();
     passwordController.dispose();
+    emailFocus.dispose();
+    passwordFocus.dispose();
     super.dispose();
+  }
+
+  void hideKeyboard() {
+    FocusScope.of(context).unfocus();
   }
 
   Future<void> signIn(String input, String password) async {
@@ -65,7 +75,9 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Login Page')),
-      body: SafeArea(
+      body: GestureDetector(
+        onTap: hideKeyboard,
+        behavior: HitTestBehavior.opaque,
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(50.0),
@@ -74,6 +86,11 @@ class _LoginPageState extends State<LoginPage> {
               children: [
                 TextField(
                   controller: emailOrUsernameController,
+                  focusNode: emailFocus,
+                  textInputAction: TextInputAction.next,
+                  onSubmitted: (_) {
+                    FocusScope.of(context).requestFocus(passwordFocus);
+                  },
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
                     labelText: 'Email or Username',
@@ -82,7 +99,53 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 20),
                 TextField(
                   controller: passwordController,
+                  focusNode: passwordFocus,
                   obscureText: _obscurePassword,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) async {
+                    hideKeyboard();
+                    String input = emailOrUsernameController.text.trim();
+                    String password = passwordController.text.trim();
+
+                    if (input.isEmpty && password.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Please enter email/username and password.',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+                    if (input.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Please enter your email/username.',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+                    if (password.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Please enter your password.',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    await signIn(input, password);
+                  },
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Password',
@@ -100,14 +163,40 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () async {
+                    hideKeyboard();
+
                     String input = emailOrUsernameController.text.trim();
                     String password = passwordController.text.trim();
 
-                    if (input.isEmpty || password.isEmpty) {
+                    if (input.isEmpty && password.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
                             'Please enter email/username and password.',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+                    if (input.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Please enter your email/username.',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+                    if (password.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Please enter your password.',
                             style: TextStyle(color: Colors.white),
                           ),
                           backgroundColor: Colors.red,
@@ -134,4 +223,4 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-//2
+//4

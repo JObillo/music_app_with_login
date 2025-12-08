@@ -14,6 +14,12 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController emailOrUsernameController =
       TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+
+  final FocusNode firstnameFocus = FocusNode();
+  final FocusNode lastnameFocus = FocusNode();
+  final FocusNode emailFocus = FocusNode();
+  final FocusNode passwordFocus = FocusNode();
+
   bool _obscurePassword = true;
 
   @override
@@ -22,8 +28,16 @@ class _SignupPageState extends State<SignupPage> {
     lastnameController.dispose();
     emailOrUsernameController.dispose();
     passwordController.dispose();
+
+    firstnameFocus.dispose();
+    lastnameFocus.dispose();
+    emailFocus.dispose();
+    passwordFocus.dispose();
+
     super.dispose();
   }
+
+  void hideKeyboard() => FocusScope.of(context).unfocus();
 
   Future<void> signUp(
     String firstname,
@@ -31,12 +45,63 @@ class _SignupPageState extends State<SignupPage> {
     String emailOrUsername,
     String password,
   ) async {
+    if (firstname.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please enter your first name.',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    if (lastname.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please enter your last name.',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    if (emailOrUsername.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please enter your email or username.',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    if (password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please enter your password.',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     try {
       final email = emailOrUsername.contains('@')
           ? emailOrUsername
           : '$emailOrUsername@example.com';
+
       UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
+
       await userCredential.user!.updateDisplayName('$firstname $lastname');
 
       if (!mounted) return;
@@ -44,7 +109,7 @@ class _SignupPageState extends State<SignupPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Successfully signup as $emailOrUsername!',
+            'Successfully signed up as $emailOrUsername!',
             style: const TextStyle(color: Colors.white),
           ),
           backgroundColor: Colors.green,
@@ -57,6 +122,7 @@ class _SignupPageState extends State<SignupPage> {
       });
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
+
       String message = '';
       if (e.code == 'weak-password') {
         message = 'The password provided is too weak.';
@@ -79,89 +145,100 @@ class _SignupPageState extends State<SignupPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Signup Page')),
-      body: Padding(
-        padding: const EdgeInsets.all(50.0),
+      body: GestureDetector(
+        onTap: hideKeyboard,
+        behavior: HitTestBehavior.opaque,
         child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextField(
-                controller: firstnameController,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'First Name'),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: lastnameController,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'Last Name'),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: emailOrUsernameController,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  labelText: 'Email or Username',
+          child: Padding(
+            padding: const EdgeInsets.all(50.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextField(
+                  controller: firstnameController,
+                  focusNode: firstnameFocus,
+                  textInputAction: TextInputAction.next,
+                  onSubmitted: (_) =>
+                      FocusScope.of(context).requestFocus(lastnameFocus),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'First Name'),
                 ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: passwordController,
-                obscureText: _obscurePassword,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                    ),
-                    onPressed: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: lastnameController,
+                  focusNode: lastnameFocus,
+                  textInputAction: TextInputAction.next,
+                  onSubmitted: (_) =>
+                      FocusScope.of(context).requestFocus(emailFocus),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Last Name'),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: emailOrUsernameController,
+                  focusNode: emailFocus,
+                  textInputAction: TextInputAction.next,
+                  onSubmitted: (_) =>
+                      FocusScope.of(context).requestFocus(passwordFocus),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: 'Email or Username',
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () async {
-                  String firstname = firstnameController.text.trim();
-                  String lastname = lastnameController.text.trim();
-                  String emailOrUsername = emailOrUsernameController.text
-                      .trim();
-                  String password = passwordController.text.trim();
-
-                  if (firstname.isEmpty ||
-                      lastname.isEmpty ||
-                      emailOrUsername.isEmpty ||
-                      password.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Please fill all fields.',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        backgroundColor: Colors.red,
-                      ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: passwordController,
+                  focusNode: passwordFocus,
+                  textInputAction: TextInputAction.done,
+                  obscureText: _obscurePassword,
+                  onSubmitted: (_) async {
+                    hideKeyboard();
+                    await signUp(
+                      firstnameController.text.trim(),
+                      lastnameController.text.trim(),
+                      emailOrUsernameController.text.trim(),
+                      passwordController.text.trim(),
                     );
-                    return;
-                  }
-
-                  await signUp(firstname, lastname, emailOrUsername, password);
-                },
-                child: const Text('Signup'),
-              ),
-              const SizedBox(height: 20),
-              TextButton(
-                onPressed: () =>
-                    Navigator.pushReplacementNamed(context, '/login'),
-                child: const Text("Already have an account? Login here"),
-              ),
-            ],
+                  },
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () async {
+                    hideKeyboard();
+                    await signUp(
+                      firstnameController.text.trim(),
+                      lastnameController.text.trim(),
+                      emailOrUsernameController.text.trim(),
+                      passwordController.text.trim(),
+                    );
+                  },
+                  child: const Text('Signup'),
+                ),
+                const SizedBox(height: 20),
+                TextButton(
+                  onPressed: () =>
+                      Navigator.pushReplacementNamed(context, '/login'),
+                  child: const Text("Already have an account? Login here"),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
-//2
+//4
