@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key});
+class SignupPage extends StatefulWidget {
+  const SignupPage({super.key});
 
   @override
-  State<RegisterPage> createState() => _RegisterPageState();
+  State<SignupPage> createState() => _SignupPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _SignupPageState extends State<SignupPage> {
   final TextEditingController firstnameController = TextEditingController();
   final TextEditingController lastnameController = TextEditingController();
   final TextEditingController emailOrUsernameController =
@@ -47,7 +47,7 @@ class _RegisterPageState extends State<RegisterPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Successfully registered as ${emailOrUsername.contains('@') ? emailOrUsername : emailOrUsername}!',
+            'Successfully signup as ${emailOrUsername.contains('@') ? emailOrUsername : emailOrUsername}!',
           ),
           backgroundColor: Colors.green,
         ),
@@ -65,7 +65,7 @@ class _RegisterPageState extends State<RegisterPage> {
       } else if (e.code == 'email-already-in-use') {
         message = 'The email/username already exists.';
       } else {
-        message = e.message ?? 'Registration failed.';
+        message = e.message ?? 'Signup failed.';
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -82,7 +82,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Register Page')),
+      appBar: AppBar(title: const Text('Signup Page')),
       body: Padding(
         padding: const EdgeInsets.all(50.0),
         child: SingleChildScrollView(
@@ -157,7 +157,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   await signUp(firstname, lastname, emailOrUsername, password);
                 },
-                child: const Text('Register'),
+                child: const Text('Signup'),
               ),
               const SizedBox(height: 20),
               TextButton(

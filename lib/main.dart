@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:device_preview/device_preview.dart';
-import 'package:app_music/register.dart';
+import 'package:app_music/signup.dart';
 import 'package:app_music/login.dart'; // <-- import LoginPage
 
 void main() async {
@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/login', // <-- start with LoginPage
       routes: {
         '/login': (context) => LoginPage(),
-        '/register': (context) => RegisterPage(),
+        '/signup': (context) => SignupPage(),
       },
     );
   }

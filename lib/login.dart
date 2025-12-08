@@ -135,9 +135,9 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 20),
                 TextButton(
                   onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/register');
+                    Navigator.pushReplacementNamed(context, '/signup');
                   },
-                  child: const Text("Don't have an account? Register here"),
+                  child: const Text("Don't have an account? Signup here"),
                 ),
               ],
             ),
