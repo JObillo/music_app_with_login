@@ -12,7 +12,7 @@ class _HomePageState extends State<HomePage> {
   late User? user;
   String firstName = '';
   String lastName = '';
-  String username = '';
+  String usernameOrEmail = '';
 
   @override
   void initState() {
@@ -30,12 +30,14 @@ class _HomePageState extends State<HomePage> {
       lastName = '';
     }
 
-    // Extract username from email (before @)
+    // Extract username or use actual email
     final email = user?.email ?? '';
-    if (email.contains('@')) {
-      username = email.split('@')[0];
+    if (email.endsWith('@example.com')) {
+      // If fake email (from username), remove the domain
+      usernameOrEmail = email.split('@')[0];
     } else {
-      username = email;
+      // Use actual email
+      usernameOrEmail = email;
     }
   }
 
@@ -63,7 +65,12 @@ class _HomePageState extends State<HomePage> {
               style: const TextStyle(fontSize: 24),
             ),
             const SizedBox(height: 10),
-            Text('Username: $username', style: const TextStyle(fontSize: 18)),
+            Text(
+              usernameOrEmail.contains('@')
+                  ? 'Email: $usernameOrEmail'
+                  : 'Username: $usernameOrEmail',
+              style: const TextStyle(fontSize: 18),
+            ),
           ],
         ),
       ),

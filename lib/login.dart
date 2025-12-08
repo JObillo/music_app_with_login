@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'home.dart'; // <-- import your HomePage
+import 'home.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -10,41 +10,38 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController usernameController =
-      TextEditingController(); // <-- username instead of email
+  final TextEditingController emailOrUsernameController =
+      TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  bool _obscurePassword = true; // For show/hide password
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
-    usernameController.dispose();
+    emailOrUsernameController.dispose();
     passwordController.dispose();
     super.dispose();
   }
 
-  // Firebase login function
-  Future<void> signIn(String username, String password) async {
+  Future<void> signIn(String input, String password) async {
     try {
-      // Convert username to fake email
-      final email = '$username@example.com';
+      // Use actual email if input contains '@', else treat as username
+      String email = input.contains('@') ? input : '$input@example.com';
 
-      // Sign in without storing the returned UserCredential
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
 
       if (!mounted) return;
 
-      // Success SnackBar
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Welcome back, $username!'),
+          content: Text(
+            'Welcome back, ${userCredential.user!.displayName ?? input}!',
+          ),
           backgroundColor: Colors.green,
         ),
       );
 
-      // Navigate to HomePage after 1 second
+      // Navigate to HomePage
       Future.delayed(const Duration(seconds: 1), () {
         if (!mounted) return;
         Navigator.pushReplacement(
@@ -56,7 +53,7 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
       String message = '';
       if (e.code == 'user-not-found') {
-        message = 'No user found for that username.';
+        message = 'No user found for that email/username.';
       } else if (e.code == 'wrong-password') {
         message = 'Wrong password provided.';
       } else {
@@ -85,17 +82,14 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Username TextField
                 TextField(
-                  controller: usernameController,
+                  controller: emailOrUsernameController,
                   decoration: const InputDecoration(
-                    labelText: 'Username',
+                    labelText: 'Email or Username',
                     border: OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Password TextField with show/hide
                 TextField(
                   controller: passwordController,
                   obscureText: _obscurePassword,
@@ -117,30 +111,28 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Login button
                 ElevatedButton(
                   onPressed: () async {
-                    String username = usernameController.text.trim();
+                    String input = emailOrUsernameController.text.trim();
                     String password = passwordController.text.trim();
 
-                    if (username.isEmpty || password.isEmpty) {
+                    if (input.isEmpty || password.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Please enter username and password.'),
+                          content: Text(
+                            'Please enter email/username and password.',
+                          ),
                           backgroundColor: Colors.red,
                         ),
                       );
                       return;
                     }
 
-                    await signIn(username, password);
+                    await signIn(input, password);
                   },
                   child: const Text('Login'),
                 ),
                 const SizedBox(height: 20),
-
-                // Link to register
                 TextButton(
                   onPressed: () {
                     Navigator.pushReplacementNamed(context, '/register');

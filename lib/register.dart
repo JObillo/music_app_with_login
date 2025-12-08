@@ -11,8 +11,8 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController firstnameController = TextEditingController();
   final TextEditingController lastnameController = TextEditingController();
-  final TextEditingController usernameController =
-      TextEditingController(); // <-- added username
+  final TextEditingController emailOrUsernameController =
+      TextEditingController(); // <-- accepts username or email
   final TextEditingController passwordController = TextEditingController();
   bool _obscurePassword = true;
 
@@ -20,7 +20,7 @@ class _RegisterPageState extends State<RegisterPage> {
   void dispose() {
     firstnameController.dispose();
     lastnameController.dispose();
-    usernameController.dispose();
+    emailOrUsernameController.dispose();
     passwordController.dispose();
     super.dispose();
   }
@@ -28,12 +28,14 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> signUp(
     String firstname,
     String lastname,
-    String username,
+    String emailOrUsername,
     String password,
   ) async {
     try {
-      // Convert username to fake email
-      final email = '$username@example.com';
+      // Check if input contains '@' -> treat as actual email
+      final email = emailOrUsername.contains('@')
+          ? emailOrUsername
+          : '$emailOrUsername@example.com';
 
       UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
@@ -44,7 +46,9 @@ class _RegisterPageState extends State<RegisterPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Successfully registered as $username!'),
+          content: Text(
+            'Successfully registered as ${emailOrUsername.contains('@') ? emailOrUsername : emailOrUsername}!',
+          ),
           backgroundColor: Colors.green,
         ),
       );
@@ -59,7 +63,7 @@ class _RegisterPageState extends State<RegisterPage> {
       if (e.code == 'weak-password') {
         message = 'The password provided is too weak.';
       } else if (e.code == 'email-already-in-use') {
-        message = 'The username already exists.';
+        message = 'The email/username already exists.';
       } else {
         message = e.message ?? 'Registration failed.';
       }
@@ -93,7 +97,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               const SizedBox(height: 20),
-
               TextField(
                 controller: lastnameController,
                 decoration: const InputDecoration(
@@ -102,17 +105,14 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Username TextField
               TextField(
-                controller: usernameController,
+                controller: emailOrUsernameController,
                 decoration: const InputDecoration(
-                  labelText: 'Username',
+                  labelText: 'Email or Username',
                   border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 20),
-
               TextField(
                 controller: passwordController,
                 obscureText: _obscurePassword,
@@ -134,17 +134,17 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               const SizedBox(height: 20),
-
               ElevatedButton(
                 onPressed: () async {
                   String firstname = firstnameController.text.trim();
                   String lastname = lastnameController.text.trim();
-                  String username = usernameController.text.trim();
+                  String emailOrUsername = emailOrUsernameController.text
+                      .trim();
                   String password = passwordController.text.trim();
 
                   if (firstname.isEmpty ||
                       lastname.isEmpty ||
-                      username.isEmpty ||
+                      emailOrUsername.isEmpty ||
                       password.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -155,7 +155,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     return;
                   }
 
-                  await signUp(firstname, lastname, username, password);
+                  await signUp(firstname, lastname, emailOrUsername, password);
                 },
                 child: const Text('Register'),
               ),
