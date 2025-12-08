@@ -12,7 +12,7 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController firstnameController = TextEditingController();
   final TextEditingController lastnameController = TextEditingController();
   final TextEditingController emailOrUsernameController =
-      TextEditingController(); // <-- accepts username or email
+      TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool _obscurePassword = true;
 
@@ -32,14 +32,11 @@ class _SignupPageState extends State<SignupPage> {
     String password,
   ) async {
     try {
-      // Check if input contains '@' -> treat as actual email
       final email = emailOrUsername.contains('@')
           ? emailOrUsername
           : '$emailOrUsername@example.com';
-
       UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
-
       await userCredential.user!.updateDisplayName('$firstname $lastname');
 
       if (!mounted) return;
@@ -47,7 +44,8 @@ class _SignupPageState extends State<SignupPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Successfully signup as ${emailOrUsername.contains('@') ? emailOrUsername : emailOrUsername}!',
+            'Successfully signup as $emailOrUsername!',
+            style: const TextStyle(color: Colors.white),
           ),
           backgroundColor: Colors.green,
         ),
@@ -69,12 +67,10 @@ class _SignupPageState extends State<SignupPage> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(message, style: const TextStyle(color: Colors.white)),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -91,45 +87,38 @@ class _SignupPageState extends State<SignupPage> {
             children: [
               TextField(
                 controller: firstnameController,
-                decoration: const InputDecoration(
-                  labelText: 'First Name',
-                  border: OutlineInputBorder(),
-                ),
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'First Name'),
               ),
               const SizedBox(height: 20),
               TextField(
                 controller: lastnameController,
-                decoration: const InputDecoration(
-                  labelText: 'Last Name',
-                  border: OutlineInputBorder(),
-                ),
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'Last Name'),
               ),
               const SizedBox(height: 20),
               TextField(
                 controller: emailOrUsernameController,
+                style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   labelText: 'Email or Username',
-                  border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 20),
               TextField(
                 controller: passwordController,
                 obscureText: _obscurePassword,
+                style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   labelText: 'Password',
-                  border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword
                           ? Icons.visibility
                           : Icons.visibility_off,
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
                   ),
                 ),
               ),
@@ -148,7 +137,10 @@ class _SignupPageState extends State<SignupPage> {
                       password.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Please fill all fields.'),
+                        content: Text(
+                          'Please fill all fields.',
+                          style: TextStyle(color: Colors.white),
+                        ),
                         backgroundColor: Colors.red,
                       ),
                     );
@@ -161,9 +153,8 @@ class _SignupPageState extends State<SignupPage> {
               ),
               const SizedBox(height: 20),
               TextButton(
-                onPressed: () {
-                  Navigator.pushReplacementNamed(context, '/login');
-                },
+                onPressed: () =>
+                    Navigator.pushReplacementNamed(context, '/login'),
                 child: const Text("Already have an account? Login here"),
               ),
             ],
@@ -173,3 +164,4 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 }
+//2

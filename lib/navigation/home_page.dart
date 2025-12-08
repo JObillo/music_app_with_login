@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/app_drawer.dart';
 import '../navigation/lyrics_page.dart';
-import '../navigation/song_data.dart'; // contains 'songs' list
+import '../navigation/song_data.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,6 +16,9 @@ class _HomePageState extends State<HomePage> {
   String firstName = '';
   String lastName = '';
   String usernameOrEmail = '';
+
+  // Used for zoom effect index
+  int? pressedIndex;
 
   @override
   void initState() {
@@ -32,12 +35,7 @@ class _HomePageState extends State<HomePage> {
       lastName = '';
     }
 
-    final email = user?.email ?? '';
-    if (email.endsWith('@example.com')) {
-      usernameOrEmail = email.split('@')[0];
-    } else {
-      usernameOrEmail = email;
-    }
+    usernameOrEmail = user?.email ?? '';
   }
 
   Future<void> logout() async {
@@ -58,69 +56,98 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
+
       drawer: AppDrawer(
         firstName: firstName,
         lastName: lastName,
         usernameOrEmail: usernameOrEmail,
         onLogout: logout,
       ),
+
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: songs.length,
         itemBuilder: (context, index) {
           final song = songs[index];
-          return InkWell(
+
+          return GestureDetector(
+            onTapDown: (_) {
+              setState(() => pressedIndex = index);
+            },
+            onTapCancel: () {
+              setState(() => pressedIndex = null);
+            },
+            onTapUp: (_) {
+              setState(() => pressedIndex = null);
+            },
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => LyricsPage(song: song)),
               );
             },
-            child: Card(
-              margin: const EdgeInsets.only(bottom: 14),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.asset(
-                      'assets/images/${song.imageUrl}',
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        width: 100,
-                        height: 100,
-                        color: Colors.grey,
-                        child: const Icon(
-                          Icons.music_note,
-                          color: Colors.white,
+
+            child: AnimatedScale(
+              scale: pressedIndex == index ? 0.97 : 1.0,
+              duration: const Duration(milliseconds: 120),
+
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.all(10),
+
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E1E),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.asset(
+                        'assets/images/${song.imageUrl}',
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.cover,
+                        errorBuilder: (ctx, err, _) => Container(
+                          width: 70,
+                          height: 70,
+                          color: Colors.grey,
+                          child: const Icon(
+                            Icons.music_note,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          song.title,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+
+                    const SizedBox(width: 14),
+
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            song.title,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
-                        Text(
-                          song.artist,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
+                          const SizedBox(height: 4),
+                          Text(
+                            song.artist,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.white70,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
@@ -129,3 +156,4 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+//3

@@ -24,7 +24,6 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> signIn(String input, String password) async {
     try {
-      // Use actual email if input contains '@', else treat as username
       String email = input.contains('@') ? input : '$input@example.com';
       UserCredential userCredential = await FirebaseAuth.instance
           .signInWithEmailAndPassword(email: email, password: password);
@@ -35,25 +34,27 @@ class _LoginPageState extends State<LoginPage> {
         SnackBar(
           content: Text(
             'Welcome back, ${userCredential.user!.displayName ?? input}!',
+            style: const TextStyle(color: Colors.white),
           ),
           backgroundColor: Colors.green,
         ),
       );
 
-      // Navigate to HomePage
       Future.delayed(const Duration(seconds: 1), () {
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomePage()),
+          MaterialPageRoute(builder: (context) => const HomePage()),
         );
       });
     } catch (e) {
-      // Friendly simple message for any login failure
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Incorrect username/email or password'),
+          content: Text(
+            'Incorrect username/email or password',
+            style: TextStyle(color: Colors.white),
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -73,29 +74,26 @@ class _LoginPageState extends State<LoginPage> {
               children: [
                 TextField(
                   controller: emailOrUsernameController,
+                  style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
                     labelText: 'Email or Username',
-                    border: OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 20),
                 TextField(
                   controller: passwordController,
                   obscureText: _obscurePassword,
+                  style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
                             ? Icons.visibility
                             : Icons.visibility_off,
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                 ),
@@ -110,6 +108,7 @@ class _LoginPageState extends State<LoginPage> {
                         const SnackBar(
                           content: Text(
                             'Please enter email/username and password.',
+                            style: TextStyle(color: Colors.white),
                           ),
                           backgroundColor: Colors.red,
                         ),
@@ -123,9 +122,8 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 20),
                 TextButton(
-                  onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/signup');
-                  },
+                  onPressed: () =>
+                      Navigator.pushReplacementNamed(context, '/signup'),
                   child: const Text("Don't have an account? Signup here"),
                 ),
               ],
@@ -136,3 +134,4 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+//2
