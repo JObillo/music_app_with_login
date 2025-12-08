@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:device_preview/device_preview.dart';
+
+// Your pages
 import 'package:app_music/signup.dart';
-import 'package:app_music/login.dart'; // <-- import LoginPage
+import 'package:app_music/login.dart';
+import 'package:app_music/navigation/home_page.dart';
+import 'package:app_music/navigation/lyrics_page.dart';
+
+import 'package:app_music/models/song.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,12 +26,26 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Music App',
       debugShowCheckedModeBanner: false,
-      // Enable DevicePreview in MaterialApp
+
       builder: DevicePreview.appBuilder,
-      initialRoute: '/login', // <-- start with LoginPage
+
+      initialRoute: '/login',
+
       routes: {
         '/login': (context) => LoginPage(),
         '/signup': (context) => SignupPage(),
+        '/home': (context) => HomePage(),
+      },
+
+      // Lyrics page uses arguments, so use onGenerateRoute
+      onGenerateRoute: (settings) {
+        if (settings.name == '/lyrics') {
+          final song = settings.arguments as Song;
+          return MaterialPageRoute(
+            builder: (context) => LyricsPage(song: song),
+          );
+        }
+        return null;
       },
     );
   }

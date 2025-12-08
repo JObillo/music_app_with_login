@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'home.dart';
+import 'navigation/home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -26,7 +26,6 @@ class _LoginPageState extends State<LoginPage> {
     try {
       // Use actual email if input contains '@', else treat as username
       String email = input.contains('@') ? input : '$input@example.com';
-
       UserCredential userCredential = await FirebaseAuth.instance
           .signInWithEmailAndPassword(email: email, password: password);
 
@@ -46,27 +45,17 @@ class _LoginPageState extends State<LoginPage> {
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
+          MaterialPageRoute(builder: (context) => HomePage()),
         );
       });
-    } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-      String message = '';
-      if (e.code == 'user-not-found') {
-        message = 'No user found for that email/username.';
-      } else if (e.code == 'wrong-password') {
-        message = 'Wrong password provided.';
-      } else {
-        message = e.message ?? 'Login failed.';
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red),
-      );
     } catch (e) {
+      // Friendly simple message for any login failure
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Incorrect username/email or password'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
