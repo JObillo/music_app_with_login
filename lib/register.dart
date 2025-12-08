@@ -1,50 +1,65 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class RegisterPage extends StatelessWidget {
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
+
+  @override
+  State<RegisterPage> createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController firstnameController = TextEditingController();
   final TextEditingController lastnameController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
+  final TextEditingController usernameController =
+      TextEditingController(); // <-- added username
   final TextEditingController passwordController = TextEditingController();
+  bool _obscurePassword = true;
 
-  RegisterPage({super.key});
+  @override
+  void dispose() {
+    firstnameController.dispose();
+    lastnameController.dispose();
+    usernameController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
-  // Firebase signup function
   Future<void> signUp(
-    BuildContext context,
     String firstname,
     String lastname,
-    String email,
+    String username,
     String password,
   ) async {
     try {
-      // 1. Create user with email & password
+      // Convert username to fake email
+      final email = '$username@example.com';
+
       UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
 
-      // 2. Update displayName to include first + last name
       await userCredential.user!.updateDisplayName('$firstname $lastname');
 
-      // Success SnackBar
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Successfully registered: ${userCredential.user!.email}',
-          ),
+          content: Text('Successfully registered as $username!'),
           backgroundColor: Colors.green,
         ),
       );
 
-      // Navigate back to login page after 1 second
-      Future.delayed(Duration(seconds: 1), () {
+      Future.delayed(const Duration(seconds: 1), () {
+        if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/login');
       });
     } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
       String message = '';
       if (e.code == 'weak-password') {
         message = 'The password provided is too weak.';
       } else if (e.code == 'email-already-in-use') {
-        message = 'The account already exists for that email.';
+        message = 'The username already exists.';
       } else {
         message = e.message ?? 'Registration failed.';
       }
@@ -53,6 +68,7 @@ class RegisterPage extends StatelessWidget {
         SnackBar(content: Text(message), backgroundColor: Colors.red),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
@@ -62,59 +78,76 @@ class RegisterPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Register Page')),
+      appBar: AppBar(title: const Text('Register Page')),
       body: Padding(
-        padding: EdgeInsets.all(50.0),
+        padding: const EdgeInsets.all(50.0),
         child: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextField(
                 controller: firstnameController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'First Name',
                   border: OutlineInputBorder(),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
+
               TextField(
                 controller: lastnameController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Last Name',
                   border: OutlineInputBorder(),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
+
+              // Username TextField
               TextField(
-                controller: emailController,
-                decoration: InputDecoration(
-                  labelText: 'Email',
+                controller: usernameController,
+                decoration: const InputDecoration(
+                  labelText: 'Username',
                   border: OutlineInputBorder(),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
+
               TextField(
                 controller: passwordController,
-                obscureText: true,
+                obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   labelText: 'Password',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
+
               ElevatedButton(
                 onPressed: () async {
                   String firstname = firstnameController.text.trim();
                   String lastname = lastnameController.text.trim();
-                  String email = emailController.text.trim();
+                  String username = usernameController.text.trim();
                   String password = passwordController.text.trim();
 
                   if (firstname.isEmpty ||
                       lastname.isEmpty ||
-                      email.isEmpty ||
+                      username.isEmpty ||
                       password.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
+                      const SnackBar(
                         content: Text('Please fill all fields.'),
                         backgroundColor: Colors.red,
                       ),
@@ -122,16 +155,16 @@ class RegisterPage extends StatelessWidget {
                     return;
                   }
 
-                  await signUp(context, firstname, lastname, email, password);
+                  await signUp(firstname, lastname, username, password);
                 },
-                child: Text('Register'),
+                child: const Text('Register'),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               TextButton(
                 onPressed: () {
                   Navigator.pushReplacementNamed(context, '/login');
                 },
-                child: Text("Already have an account? Login here"),
+                child: const Text("Already have an account? Login here"),
               ),
             ],
           ),
