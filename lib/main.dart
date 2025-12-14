@@ -6,15 +6,13 @@ import 'package:device_preview/device_preview.dart';
 // Pages
 import 'package:app_music/signup.dart';
 import 'package:app_music/login.dart';
-import 'package:app_music/navigation/home_page.dart';
 import 'package:app_music/navigation/lyrics_page.dart';
 import 'package:app_music/models/song.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // runApp(const MyApp());
   runApp(DevicePreview(enabled: true, builder: (context) => const MyApp()));
 }
 
@@ -32,15 +30,12 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginPage(),
         '/signup': (context) => const SignupPage(),
-        '/home': (context) => const HomePage(),
       },
 
       onGenerateRoute: (settings) {
         if (settings.name == '/lyrics') {
           final song = settings.arguments as Song;
-          return MaterialPageRoute(
-            builder: (context) => LyricsPage(song: song),
-          );
+          return MaterialPageRoute(builder: (_) => LyricsPage(song: song));
         }
         return null;
       },
@@ -85,9 +80,9 @@ class MyApp extends StatelessWidget {
           actionTextColor: const Color(0xFF1877F2),
         ),
         textSelectionTheme: const TextSelectionThemeData(
-          cursorColor: Color(0xFF1877F2), // Facebook blue cursor
-          selectionColor: Color(0xFF1877F2), // Text selection highlight
-          selectionHandleColor: Color(0xFF1877F2), // Handle color
+          cursorColor: Color(0xFF1877F2),
+          selectionColor: Color(0xFF1877F2),
+          selectionHandleColor: Color(0xFF1877F2),
         ),
       ),
     );

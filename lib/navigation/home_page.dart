@@ -1,46 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/app_drawer.dart';
 import '../navigation/lyrics_page.dart';
 import '../navigation/song_data.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final String firstname;
+  final String lastname;
+  final String username;
+
+  const HomePage({
+    super.key,
+    required this.firstname,
+    required this.lastname,
+    required this.username,
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  late User? user;
-  String firstName = '';
-  String lastName = '';
-  String usernameOrEmail = '';
-
-  // Used for zoom effect index
   int? pressedIndex;
 
-  @override
-  void initState() {
-    super.initState();
-    user = FirebaseAuth.instance.currentUser;
-
-    final fullName = user?.displayName ?? 'No Name';
-    if (fullName.contains(' ')) {
-      final parts = fullName.split(' ');
-      firstName = parts[0];
-      lastName = parts.sublist(1).join(' ');
-    } else {
-      firstName = fullName;
-      lastName = '';
-    }
-
-    usernameOrEmail = user?.email ?? '';
-  }
-
-  Future<void> logout() async {
-    await FirebaseAuth.instance.signOut();
-    if (!mounted) return;
+  void logout() {
     Navigator.pushReplacementNamed(context, '/login');
   }
 
@@ -58,9 +40,9 @@ class _HomePageState extends State<HomePage> {
       ),
 
       drawer: AppDrawer(
-        firstName: firstName,
-        lastName: lastName,
-        usernameOrEmail: usernameOrEmail,
+        firstName: widget.firstname,
+        lastName: widget.lastname,
+        usernameOrEmail: widget.username,
         onLogout: logout,
       ),
 
@@ -71,15 +53,9 @@ class _HomePageState extends State<HomePage> {
           final song = songs[index];
 
           return GestureDetector(
-            onTapDown: (_) {
-              setState(() => pressedIndex = index);
-            },
-            onTapCancel: () {
-              setState(() => pressedIndex = null);
-            },
-            onTapUp: (_) {
-              setState(() => pressedIndex = null);
-            },
+            onTapDown: (_) => setState(() => pressedIndex = index),
+            onTapCancel: () => setState(() => pressedIndex = null),
+            onTapUp: (_) => setState(() => pressedIndex = null),
             onTap: () {
               Navigator.push(
                 context,
@@ -94,7 +70,6 @@ class _HomePageState extends State<HomePage> {
               child: Container(
                 margin: const EdgeInsets.only(bottom: 14),
                 padding: const EdgeInsets.all(10),
-
                 decoration: BoxDecoration(
                   color: const Color(0xFF1E1E1E),
                   borderRadius: BorderRadius.circular(12),
@@ -109,14 +84,11 @@ class _HomePageState extends State<HomePage> {
                         width: 70,
                         height: 70,
                         fit: BoxFit.cover,
-                        errorBuilder: (ctx, err, _) => Container(
+                        errorBuilder: (_, __, ___) => Container(
                           width: 70,
                           height: 70,
                           color: Colors.grey,
-                          child: const Icon(
-                            Icons.music_note,
-                            color: Colors.white,
-                          ),
+                          child: const Icon(Icons.music_note),
                         ),
                       ),
                     ),
@@ -132,7 +104,6 @@ class _HomePageState extends State<HomePage> {
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -156,4 +127,4 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-//3
+//working fine 1
