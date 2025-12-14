@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'navigation/home_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:bcrypt/bcrypt.dart';
+import 'navigation/home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -20,6 +22,15 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
   bool _obscurePassword = true;
 
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // Google Sign-In
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
+
+  // =========================
+  // USERNAME / PASSWORD LOGIN
+  // =========================
   Future<void> login() async {
     final username = usernameController.text.trim();
     final password = passwordController.text.trim();
@@ -37,23 +48,24 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      final doc = await FirebaseFirestore.instance
+      // Find user by username
+      final query = await _firestore
           .collection('users')
-          .doc(username)
+          .where('username', isEqualTo: username)
+          .limit(1)
           .get();
 
-      if (!doc.exists) throw "User not found";
+      if (query.docs.isEmpty) throw "User not found";
 
-      final data = doc.data()!;
+      final data = query.docs.first.data();
       final storedHash = data['password'].toString();
 
       bool isPasswordCorrect;
-
       if (storedHash.startsWith(r'$2b$') || storedHash.startsWith(r'$2a$')) {
-        // Password is hashed
+        // bcrypt hashed
         isPasswordCorrect = BCrypt.checkpw(password, storedHash);
       } else {
-        // Old plain text password
+        // plain text (old)
         isPasswordCorrect = password == storedHash;
       }
 
@@ -94,6 +106,59 @@ class _LoginPageState extends State<LoginPage> {
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // =========================
+  // GOOGLE SIGN-IN
+  // =========================
+  Future<void> loginWithGoogle() async {
+    try {
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) return; // user canceled
+
+      final googleAuth = await googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredential = await _auth.signInWithCredential(credential);
+      final user = userCredential.user;
+      if (user == null) return;
+
+      // Save Google user in Firestore if new
+      final userRef = _firestore.collection('users').doc(user.uid);
+
+      if (!(await userRef.get()).exists) {
+        await userRef.set({
+          'firstname': user.displayName?.split(' ').first ?? 'Google',
+          'lastname': user.displayName?.split(' ').skip(1).join(' ') ?? 'User',
+          'username': user.email,
+          'email': user.email,
+          'provider': 'google',
+          'createdAt': Timestamp.now(),
+        });
+      }
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => HomePage(
+            firstname: user.displayName?.split(' ').first ?? 'Google',
+            lastname: user.displayName?.split(' ').skip(1).join(' ') ?? 'User',
+            username: user.email ?? '',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Google Sign-In Failed: $e")));
     }
   }
 
@@ -149,6 +214,12 @@ class _LoginPageState extends State<LoginPage> {
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text("Login"),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  onPressed: loginWithGoogle,
+                  icon: const Icon(Icons.login),
+                  label: const Text("Sign in with Google"),
                 ),
                 const SizedBox(height: 20),
                 TextButton(

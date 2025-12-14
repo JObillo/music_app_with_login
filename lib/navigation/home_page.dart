@@ -6,13 +6,17 @@ import '../navigation/song_data.dart';
 class HomePage extends StatefulWidget {
   final String firstname;
   final String lastname;
-  final String username;
+  final String username; // username OR email
+  final String? email;
+  final String? photoUrl;
 
   const HomePage({
     super.key,
     required this.firstname,
     required this.lastname,
     required this.username,
+    this.email,
+    this.photoUrl,
   });
 
   @override
@@ -42,7 +46,8 @@ class _HomePageState extends State<HomePage> {
       drawer: AppDrawer(
         firstName: widget.firstname,
         lastName: widget.lastname,
-        usernameOrEmail: widget.username,
+        usernameOrEmail: widget.email ?? widget.username,
+        photoUrl: widget.photoUrl,
         onLogout: logout,
       ),
 
