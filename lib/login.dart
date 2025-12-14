@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:bcrypt/bcrypt.dart';
+import 'package:http/http.dart' as http;
 import 'navigation/home_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -19,13 +20,13 @@ class _LoginPageState extends State<LoginPage> {
   final FocusNode usernameFocus = FocusNode();
   final FocusNode passwordFocus = FocusNode();
 
-  bool _isLoading = false;
+  bool _isLoading = false; // username/password
+  bool _googleLoading = false; // google sign-in
   bool _obscurePassword = true;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Google Sign-In
   final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
 
   // =========================
@@ -36,6 +37,7 @@ class _LoginPageState extends State<LoginPage> {
     final password = passwordController.text.trim();
 
     if (username.isEmpty || password.isEmpty) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Please enter username and password."),
@@ -48,7 +50,6 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      // Find user by username
       final query = await _firestore
           .collection('users')
           .where('username', isEqualTo: username)
@@ -60,14 +61,9 @@ class _LoginPageState extends State<LoginPage> {
       final data = query.docs.first.data();
       final storedHash = data['password'].toString();
 
-      bool isPasswordCorrect;
-      if (storedHash.startsWith(r'$2b$') || storedHash.startsWith(r'$2a$')) {
-        // bcrypt hashed
-        isPasswordCorrect = BCrypt.checkpw(password, storedHash);
-      } else {
-        // plain text (old)
-        isPasswordCorrect = password == storedHash;
-      }
+      final isPasswordCorrect = storedHash.startsWith(r'$2')
+          ? BCrypt.checkpw(password, storedHash)
+          : password == storedHash;
 
       if (!isPasswordCorrect) throw "Wrong password";
 
@@ -75,10 +71,7 @@ class _LoginPageState extends State<LoginPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Welcome back, ${data['firstname']}!',
-            style: const TextStyle(color: Colors.white),
-          ),
+          content: Text('Welcome back, ${data['firstname']}!'),
           backgroundColor: Colors.green,
         ),
       );
@@ -113,9 +106,11 @@ class _LoginPageState extends State<LoginPage> {
   // GOOGLE SIGN-IN
   // =========================
   Future<void> loginWithGoogle() async {
+    setState(() => _googleLoading = true);
+
     try {
       final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return; // user canceled
+      if (googleUser == null) return;
 
       final googleAuth = await googleUser.authentication;
 
@@ -128,7 +123,6 @@ class _LoginPageState extends State<LoginPage> {
       final user = userCredential.user;
       if (user == null) return;
 
-      // Save Google user in Firestore if new
       final userRef = _firestore.collection('users').doc(user.uid);
 
       if (!(await userRef.get()).exists) {
@@ -142,24 +136,62 @@ class _LoginPageState extends State<LoginPage> {
         });
       }
 
+      // USER TOKEN RETRIEVAL
+      final token = await user.getIdToken();
+      debugPrint('Firebase User Token: $token');
+
+      // API INTEGRATION
+      if (token != null) {
+        await callProtectedApi(token);
+      }
+
       if (!mounted) return;
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => HomePage(
-            firstname: user.displayName?.split(' ').first ?? 'Google',
-            lastname: user.displayName?.split(' ').skip(1).join(' ') ?? 'User',
-            username: user.email ?? '',
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Welcome, ${user.displayName?.split(' ').first ?? 'User'}!',
           ),
+          backgroundColor: Colors.green,
         ),
       );
+
+      Future.delayed(const Duration(seconds: 1), () {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => HomePage(
+              firstname: user.displayName?.split(' ').first ?? 'Google',
+              lastname:
+                  user.displayName?.split(' ').skip(1).join(' ') ?? 'User',
+              username: user.email ?? '',
+              email: user.email,
+              photoUrl: user.photoURL,
+            ),
+          ),
+        );
+      });
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Google Sign-In Failed: $e")));
+    } finally {
+      if (mounted) setState(() => _googleLoading = false);
     }
+  }
+
+  // =========================
+  // API FUNCTION
+  // =========================
+  Future<void> callProtectedApi(String token) async {
+    final response = await http.get(
+      Uri.parse('https://jsonplaceholder.typicode.com/posts/1'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    debugPrint(response.body);
   }
 
   void hideKeyboard() => FocusScope.of(context).unfocus();
@@ -170,65 +202,79 @@ class _LoginPageState extends State<LoginPage> {
       appBar: AppBar(title: const Text("Login Page")),
       body: GestureDetector(
         onTap: hideKeyboard,
-        behavior: HitTestBehavior.opaque,
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(50),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextField(
-                  controller: usernameController,
-                  focusNode: usernameFocus,
-                  textInputAction: TextInputAction.next,
-                  onSubmitted: (_) {
-                    FocusScope.of(context).requestFocus(passwordFocus);
-                  },
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(labelText: "Username"),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: passwordController,
-                  focusNode: passwordFocus,
-                  obscureText: _obscurePassword,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => login(),
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: "Password",
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility
-                            : Icons.visibility_off,
-                      ),
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
+          padding: const EdgeInsets.all(50),
+          child: Column(
+            children: [
+              TextField(
+                controller: usernameController,
+                focusNode: usernameFocus,
+                textInputAction: TextInputAction.next,
+                onSubmitted: (_) =>
+                    FocusScope.of(context).requestFocus(passwordFocus),
+                decoration: const InputDecoration(labelText: "Username"),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: passwordController,
+                focusNode: passwordFocus,
+                textInputAction: TextInputAction.done,
+                obscureText: _obscurePassword,
+                onSubmitted: (_) => login(),
+                decoration: InputDecoration(
+                  labelText: "Password",
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                     ),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
                   ),
                 ),
-                const SizedBox(height: 30),
-                ElevatedButton(
+              ),
+              const SizedBox(height: 30),
+
+              // LOGIN BUTTON
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
                   onPressed: _isLoading ? null : login,
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text("Login"),
                 ),
-                const SizedBox(height: 20),
-                ElevatedButton.icon(
-                  onPressed: loginWithGoogle,
-                  icon: const Icon(Icons.login),
-                  label: const Text("Sign in with Google"),
+              ),
+
+              const SizedBox(height: 16),
+
+              // GOOGLE BUTTON
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: _googleLoading ? null : loginWithGoogle,
+                  icon: _googleLoading
+                      ? const SizedBox.shrink()
+                      : Image.asset(
+                          'assets/images/google_logo.png', // official Google logo PNG
+                          height: 35,
+                        ),
+                  label: _googleLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text("Sign in with Google"),
                 ),
-                const SizedBox(height: 20),
-                TextButton(
-                  onPressed: () =>
-                      Navigator.pushReplacementNamed(context, '/signup'),
-                  child: const Text("Don't have an account? Sign up"),
-                ),
-              ],
-            ),
+              ),
+
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: () =>
+                    Navigator.pushReplacementNamed(context, '/signup'),
+                child: const Text("Don't have an account? Sign up"),
+              ),
+            ],
           ),
         ),
       ),
