@@ -25,27 +25,22 @@ class _LyricsPageState extends State<LyricsPage> {
     _controller = YoutubePlayerController(
       initialVideoId: videoId ?? '',
       flags: const YoutubePlayerFlags(
-        autoPlay: true, // Auto play immediately
+        autoPlay: true,
         mute: false,
         disableDragSeek: false,
-        hideControls: true, // hide video controls
+        hideControls: true,
         hideThumbnail: true,
         isLive: false,
       ),
     );
 
-    // Listen to player state
     _controller.addListener(() {
       if (!mounted) return;
-
       final value = _controller.value;
-      final position = value.position;
-      final duration = value.metaData.duration;
-
       setState(() {
         isPlaying = value.isPlaying;
-        current = position;
-        total = duration;
+        current = value.position;
+        total = value.metaData.duration;
       });
     });
   }
@@ -71,6 +66,7 @@ class _LyricsPageState extends State<LyricsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final song = widget.song;
 
     return Scaffold(
@@ -87,23 +83,18 @@ class _LyricsPageState extends State<LyricsPage> {
                 width: 170,
                 height: 170,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => placeholderImage(),
+                errorBuilder: (_, __, ___) => placeholderImage(theme),
               ),
             ),
             const SizedBox(height: 10),
             Text(
               song.title,
-              style: const TextStyle(
-                fontSize: 20,
+              style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
               ),
               textAlign: TextAlign.center,
             ),
-            Text(
-              song.artist,
-              style: const TextStyle(fontSize: 14, color: Colors.white70),
-            ),
+            Text(song.artist, style: theme.textTheme.bodySmall),
             const SizedBox(height: 10),
 
             // Play/Pause Button
@@ -113,7 +104,7 @@ class _LyricsPageState extends State<LyricsPage> {
                     ? Icons.pause_circle_filled
                     : Icons.play_circle_filled,
                 size: 55,
-                color: const Color(0xFF1877F2),
+                color: theme.primaryColor,
               ),
               onPressed: togglePlayPause,
             ),
@@ -125,9 +116,9 @@ class _LyricsPageState extends State<LyricsPage> {
                   SliderTheme(
                     data: SliderTheme.of(context).copyWith(
                       trackHeight: 3,
-                      activeTrackColor: const Color(0xFF1877F2),
-                      inactiveTrackColor: Colors.grey.shade700,
-                      thumbColor: const Color(0xFF1877F2),
+                      activeTrackColor: theme.primaryColor,
+                      inactiveTrackColor: theme.primaryColor.withOpacity(0.3),
+                      thumbColor: theme.primaryColor,
                     ),
                     child: Slider(
                       min: 0,
@@ -143,27 +134,20 @@ class _LyricsPageState extends State<LyricsPage> {
                   ),
                   Text(
                     "${formatTime(current)} / ${formatTime(total)}",
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    style: theme.textTheme.bodySmall,
                   ),
                 ],
               ),
 
             // Hidden YouTube player (audio only)
-            SizedBox(
-              height: 0, // hide video
-              child: YoutubePlayer(controller: _controller),
-            ),
+            SizedBox(height: 0, child: YoutubePlayer(controller: _controller)),
 
             // Lyrics scroll
             Expanded(
               child: SingleChildScrollView(
                 child: Text(
                   song.lyrics,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    height: 1.55,
-                    color: Colors.white,
-                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
                 ),
               ),
             ),
@@ -173,12 +157,16 @@ class _LyricsPageState extends State<LyricsPage> {
     );
   }
 
-  Widget placeholderImage() {
+  Widget placeholderImage(ThemeData theme) {
     return Container(
       width: 170,
       height: 170,
-      color: Colors.grey.shade800,
-      child: const Icon(Icons.music_note, color: Colors.white, size: 50),
+      color: theme.cardColor,
+      child: Icon(
+        Icons.music_note,
+        color: theme.primaryColor.withOpacity(0.6),
+        size: 50,
+      ),
     );
   }
 }

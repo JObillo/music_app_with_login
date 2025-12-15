@@ -4,16 +4,22 @@ import 'firebase_options.dart';
 import 'package:device_preview/device_preview.dart';
 
 // Pages
-import 'package:app_music/signup.dart';
-import 'package:app_music/login.dart';
-import 'package:app_music/navigation/lyrics_page.dart';
-import 'package:app_music/models/song.dart';
+import 'login.dart';
+import 'signup.dart';
+import 'navigation/lyrics_page.dart';
+import 'models/song.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // runApp(DevicePreview(enabled: true, builder: (context) => const MyApp()));
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } on FirebaseException catch (e) {
+    if (e.code != 'duplicate-app') rethrow;
+  }
+
   runApp(const MyApp());
 }
 
@@ -23,16 +29,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Music App',
+      title: 'Belle Music',
       debugShowCheckedModeBanner: false,
       builder: DevicePreview.appBuilder,
       initialRoute: '/login',
-
       routes: {
         '/login': (context) => const LoginPage(),
         '/signup': (context) => const SignupPage(),
       },
-
       onGenerateRoute: (settings) {
         if (settings.name == '/lyrics') {
           final song = settings.arguments as Song;
@@ -40,50 +44,39 @@ class MyApp extends StatelessWidget {
         }
         return null;
       },
-
       theme: ThemeData(
-        brightness: Brightness.dark,
-        primaryColor: const Color(0xFF1877F2),
-        scaffoldBackgroundColor: const Color(0xFF121212),
+        brightness: Brightness.light,
+        primaryColor: const Color(0xFFB76E79),
+        scaffoldBackgroundColor: const Color(0xFFF7F3F2),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1F1F1F),
+          backgroundColor: Color(0xFFB76E79),
           foregroundColor: Colors.white,
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1877F2),
+            backgroundColor: const Color(0xFFB76E79),
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
             ),
+            padding: const EdgeInsets.symmetric(vertical: 14),
           ),
         ),
         textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(foregroundColor: const Color(0xFF1877F2)),
+          style: TextButton.styleFrom(foregroundColor: const Color(0xFFB76E79)),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: const Color(0xFF1F1F1F),
-          labelStyle: const TextStyle(color: Colors.white70),
-          hintStyle: const TextStyle(color: Colors.white38),
+          fillColor: Colors.white,
+          labelStyle: const TextStyle(color: Color(0xFF8B5E5B)),
           enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.white24),
-            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFF8B5E5B)),
+            borderRadius: BorderRadius.circular(12),
           ),
           focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Color(0xFF1877F2)),
-            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFB76E79)),
+            borderRadius: BorderRadius.circular(12),
           ),
-        ),
-        snackBarTheme: SnackBarThemeData(
-          backgroundColor: Colors.grey[900],
-          contentTextStyle: const TextStyle(color: Colors.white),
-          actionTextColor: const Color(0xFF1877F2),
-        ),
-        textSelectionTheme: const TextSelectionThemeData(
-          cursorColor: Color(0xFF1877F2),
-          selectionColor: Color(0xFF1877F2),
-          selectionHandleColor: Color(0xFF1877F2),
         ),
       ),
     );

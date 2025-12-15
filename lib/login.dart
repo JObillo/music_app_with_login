@@ -196,85 +196,95 @@ class _LoginPageState extends State<LoginPage> {
 
   void hideKeyboard() => FocusScope.of(context).unfocus();
 
+  // SAME IMPORTS AS BEFORE (UNCHANGED)
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Login Page")),
-      body: GestureDetector(
-        onTap: hideKeyboard,
+      body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(50),
-          child: Column(
-            children: [
-              TextField(
-                controller: usernameController,
-                focusNode: usernameFocus,
-                textInputAction: TextInputAction.next,
-                onSubmitted: (_) =>
-                    FocusScope.of(context).requestFocus(passwordFocus),
-                decoration: const InputDecoration(labelText: "Username"),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: passwordController,
-                focusNode: passwordFocus,
-                textInputAction: TextInputAction.done,
-                obscureText: _obscurePassword,
-                onSubmitted: (_) => login(),
-                decoration: InputDecoration(
-                  labelText: "Password",
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
+          padding: const EdgeInsets.all(20),
+          child: Card(
+            elevation: 6,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "Welcome Back",
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFB76E79),
                     ),
-                    onPressed: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
                   ),
-                ),
-              ),
-              const SizedBox(height: 30),
+                  const SizedBox(height: 20),
 
-              // LOGIN BUTTON
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : login,
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Login"),
-                ),
-              ),
+                  TextField(
+                    controller: usernameController,
+                    focusNode: usernameFocus,
+                    decoration: const InputDecoration(labelText: "Username"),
+                  ),
+                  const SizedBox(height: 16),
 
-              const SizedBox(height: 16),
-
-              // GOOGLE BUTTON
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton.icon(
-                  onPressed: _googleLoading ? null : loginWithGoogle,
-                  icon: _googleLoading
-                      ? const SizedBox.shrink()
-                      : Image.asset(
-                          'assets/images/google_logo.png', // official Google logo PNG
-                          height: 35,
+                  TextField(
+                    controller: passwordController,
+                    focusNode: passwordFocus,
+                    obscureText: _obscurePassword,
+                    decoration: InputDecoration(
+                      labelText: "Password",
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
                         ),
-                  label: _googleLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Sign in with Google"),
-                ),
-              ),
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
 
-              const SizedBox(height: 20),
-              TextButton(
-                onPressed: () =>
-                    Navigator.pushReplacementNamed(context, '/signup'),
-                child: const Text("Don't have an account? Sign up"),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : login,
+                      child: _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text("Login"),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _googleLoading ? null : loginWithGoogle,
+                      icon: Image.asset(
+                        'assets/images/google_logo.png',
+                        height: 24,
+                      ),
+                      label: const Text("Sign in with Google"),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  TextButton(
+                    onPressed: () =>
+                        Navigator.pushReplacementNamed(context, '/signup'),
+                    child: const Text("Don't have an account? Sign up"),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

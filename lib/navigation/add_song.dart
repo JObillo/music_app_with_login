@@ -4,7 +4,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class AddSongPage extends StatefulWidget {
   final String? username; // Pass username from login page
-  const AddSongPage({super.key, this.username});
+  final VoidCallback? onSongAdded; // Callback after saving
+  final VoidCallback? onCancel; // Callback on cancel
+
+  const AddSongPage({
+    super.key,
+    this.username,
+    this.onSongAdded,
+    this.onCancel,
+  });
 
   @override
   State<AddSongPage> createState() => _AddSongPageState();
@@ -39,7 +47,6 @@ class _AddSongPageState extends State<AddSongPage> {
     try {
       final user = FirebaseAuth.instance.currentUser;
 
-      // Use passed username if exists, otherwise use email
       final createdBy = widget.username ?? user?.email ?? 'Unknown';
 
       await FirebaseFirestore.instance.collection('songs').add({
@@ -56,11 +63,12 @@ class _AddSongPageState extends State<AddSongPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Song added successfully!'),
-          backgroundColor: Colors.green, // green success message
+          backgroundColor: Colors.green,
         ),
       );
 
-      Navigator.pop(context);
+      // Switch back to Home tab
+      if (widget.onSongAdded != null) widget.onSongAdded!();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -143,7 +151,11 @@ class _AddSongPageState extends State<AddSongPage> {
                       ),
                       onPressed: isLoading
                           ? null
-                          : () => Navigator.pop(context),
+                          : () {
+                              if (widget.onCancel != null) {
+                                widget.onCancel!(); // switch to home
+                              }
+                            },
                       child: const Text('Cancel'),
                     ),
                   ),

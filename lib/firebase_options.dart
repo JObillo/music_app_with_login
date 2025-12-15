@@ -41,48 +41,51 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyC12SugZX8SxdR_CwJMy_CP8k7HlvbDTuk',
-    appId: '1:468408385936:web:0bf2e60d5c318a182cb315',
-    messagingSenderId: '468408385936',
-    projectId: 'musicapp-f8971',
-    authDomain: 'musicapp-f8971.firebaseapp.com',
-    storageBucket: 'musicapp-f8971.firebasestorage.app',
-    measurementId: 'G-Y12Q5ECV67',
+    apiKey: 'AIzaSyBCS3gR3bl7rDbKK_RBWEHJWaHzHnCGSU4',
+    appId: '1:715032422450:web:b6eceffd492523d1ec742b',
+    messagingSenderId: '715032422450',
+    projectId: 'belle-music-app',
+    authDomain: 'belle-music-app.firebaseapp.com',
+    storageBucket: 'belle-music-app.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAzsyUFHV6fhI1MmLqjAqrYO_2TYjGauPA',
-    appId: '1:468408385936:android:97b60c09262bd8f72cb315',
-    messagingSenderId: '468408385936',
-    projectId: 'musicapp-f8971',
-    storageBucket: 'musicapp-f8971.firebasestorage.app',
+    apiKey: 'AIzaSyASjkKMWOh3UXAXorWdYsXyCYYz7AtAfdY',
+    appId: '1:715032422450:android:f5f7b02cf26591e9ec742b',
+    messagingSenderId: '715032422450',
+    projectId: 'belle-music-app',
+    storageBucket: 'belle-music-app.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDXQ9evtbvGIo1QY4yiWBqx8cil2c3Yf2M',
-    appId: '1:468408385936:ios:7db0b751594f763e2cb315',
-    messagingSenderId: '468408385936',
-    projectId: 'musicapp-f8971',
-    storageBucket: 'musicapp-f8971.firebasestorage.app',
+    apiKey: 'AIzaSyCejbty7Zm6rCPnimovsnAZM5ik64_wbMA',
+    appId: '1:715032422450:ios:111732e0d90cc8a6ec742b',
+    messagingSenderId: '715032422450',
+    projectId: 'belle-music-app',
+    storageBucket: 'belle-music-app.firebasestorage.app',
+    androidClientId: '715032422450-i2cnp23v2bjha78656ldif5vucuq0env.apps.googleusercontent.com',
+    iosClientId: '715032422450-63j0uuuvou5r9cfi7t1e08tjqgtqh5uf.apps.googleusercontent.com',
     iosBundleId: 'com.example.appMusic',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyDXQ9evtbvGIo1QY4yiWBqx8cil2c3Yf2M',
-    appId: '1:468408385936:ios:7db0b751594f763e2cb315',
-    messagingSenderId: '468408385936',
-    projectId: 'musicapp-f8971',
-    storageBucket: 'musicapp-f8971.firebasestorage.app',
+    apiKey: 'AIzaSyCejbty7Zm6rCPnimovsnAZM5ik64_wbMA',
+    appId: '1:715032422450:ios:111732e0d90cc8a6ec742b',
+    messagingSenderId: '715032422450',
+    projectId: 'belle-music-app',
+    storageBucket: 'belle-music-app.firebasestorage.app',
+    androidClientId: '715032422450-i2cnp23v2bjha78656ldif5vucuq0env.apps.googleusercontent.com',
+    iosClientId: '715032422450-63j0uuuvou5r9cfi7t1e08tjqgtqh5uf.apps.googleusercontent.com',
     iosBundleId: 'com.example.appMusic',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyC12SugZX8SxdR_CwJMy_CP8k7HlvbDTuk',
-    appId: '1:468408385936:web:f8563f65aadbf6982cb315',
-    messagingSenderId: '468408385936',
-    projectId: 'musicapp-f8971',
-    authDomain: 'musicapp-f8971.firebaseapp.com',
-    storageBucket: 'musicapp-f8971.firebasestorage.app',
-    measurementId: 'G-VQLG88P5DH',
+    apiKey: 'AIzaSyBCS3gR3bl7rDbKK_RBWEHJWaHzHnCGSU4',
+    appId: '1:715032422450:web:0eaadaa9fe1ba7a6ec742b',
+    messagingSenderId: '715032422450',
+    projectId: 'belle-music-app',
+    authDomain: 'belle-music-app.firebaseapp.com',
+    storageBucket: 'belle-music-app.firebasestorage.app',
   );
+
 }
