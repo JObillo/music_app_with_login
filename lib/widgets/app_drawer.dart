@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../navigation/add_song.dart';
 
 class AppDrawer extends StatelessWidget {
   final String firstName;
@@ -8,6 +9,7 @@ class AppDrawer extends StatelessWidget {
   final String usernameOrEmail;
   final String? photoUrl;
   final VoidCallback? onLogout;
+  final VoidCallback? goToFavorites;
 
   const AppDrawer({
     super.key,
@@ -16,20 +18,16 @@ class AppDrawer extends StatelessWidget {
     required this.usernameOrEmail,
     this.photoUrl,
     this.onLogout,
+    this.goToFavorites,
   });
 
   Future<void> handleLogout(BuildContext context) async {
     try {
-      // Sign out from Firebase
       await FirebaseAuth.instance.signOut();
-
-      // Sign out from Google
       final googleSignIn = GoogleSignIn();
       if (await googleSignIn.isSignedIn()) {
         await googleSignIn.signOut();
       }
-
-      // Navigate back to login
       if (!context.mounted) return;
       Navigator.pushReplacementNamed(context, '/login');
     } catch (e) {
@@ -108,6 +106,34 @@ class AppDrawer extends StatelessWidget {
             title: const Text('Home', style: TextStyle(color: Colors.white)),
             onTap: () => Navigator.pop(context),
           ),
+          ListTile(
+            leading: const Icon(Icons.add, color: Colors.white),
+            title: const Text(
+              'Add Song',
+              style: TextStyle(color: Colors.white),
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AddSongPage(username: usernameOrEmail),
+                ),
+              );
+            },
+          ),
+          if (goToFavorites != null)
+            ListTile(
+              leading: const Icon(Icons.thumb_up, color: Colors.white),
+              title: const Text(
+                'Favorites',
+                style: TextStyle(color: Colors.white),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                goToFavorites!();
+              },
+            ),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.white),
             title: const Text('Logout', style: TextStyle(color: Colors.white)),
