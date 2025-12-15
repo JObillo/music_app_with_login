@@ -57,100 +57,79 @@ class _LyricsPageState extends State<LyricsPage> {
     final song = widget.song;
 
     return Scaffold(
-      appBar: AppBar(),
+      backgroundColor: const Color(0xFFF7F3F2),
+      appBar: AppBar(backgroundColor: const Color(0xFFB76E79)),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Column(
           children: [
-            // Smaller image
             ClipRRect(
               borderRadius: BorderRadius.circular(14),
               child: Image.asset(
                 'assets/images/${song.imageUrl}',
-                width: 170, // reduced
-                height: 170, // reduced
+                width: 170,
+                height: 170,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => placeholderImage(),
               ),
             ),
-
-            const SizedBox(height: 10),
-
+            const SizedBox(height: 12),
             Text(
               song.title,
               style: const TextStyle(
-                fontSize: 20,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Color(0xFFB76E79),
               ),
               textAlign: TextAlign.center,
             ),
-
             Text(
               song.artist,
-              style: const TextStyle(fontSize: 14, color: Colors.white70),
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
             ),
-
-            const SizedBox(height: 5),
-
-            // Play/Pause Button
+            const SizedBox(height: 6),
             IconButton(
               icon: Icon(
                 isPlaying
                     ? Icons.pause_circle_filled
                     : Icons.play_circle_filled,
                 size: 55,
-                color: Color(0xFF1877F2),
+                color: const Color(0xFFB76E79),
               ),
               onPressed: togglePlayPause,
             ),
-
-            // Progress bar (reduced vertical padding)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  trackHeight: 3, // thinner track
-                  activeTrackColor: Color(0xFF1877F2),
-                  inactiveTrackColor: Colors.grey.shade700,
-                  thumbColor: Color(0xFF1877F2),
+            SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 3,
+                activeTrackColor: const Color(0xFFB76E79),
+                inactiveTrackColor: Colors.grey.shade400,
+                thumbColor: const Color(0xFFB76E79),
+              ),
+              child: Slider(
+                min: 0,
+                max: total.inSeconds.toDouble(),
+                value: current.inSeconds.toDouble().clamp(
+                  0,
+                  total.inSeconds.toDouble(),
                 ),
-                child: Slider(
-                  min: 0,
-                  max: total.inSeconds.toDouble(),
-                  value: current.inSeconds.toDouble().clamp(
-                    0,
-                    total.inSeconds.toDouble(),
-                  ),
-                  onChanged: (value) {
-                    player.seek(Duration(seconds: value.toInt()));
-                  },
-                ),
+                onChanged: (value) {
+                  player.seek(Duration(seconds: value.toInt()));
+                },
               ),
             ),
-
-            // Time text (smaller)
             Text(
               "${formatTime(current)} / ${formatTime(total)}",
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
             ),
-
             const SizedBox(height: 12),
-
-            // Lyrics (more room)
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 1,
-                ), // less padding → wider space
-                child: SingleChildScrollView(
-                  child: Text(
-                    song.lyrics,
-                    style: const TextStyle(
-                      fontSize: 20, // was 15 → increased
-                      height: 1.55, // better readability
-                      color: Colors.white,
-                    ),
+              child: SingleChildScrollView(
+                child: Text(
+                  song.lyrics,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    height: 1.55,
+                    color: Colors.black87,
                   ),
                 ),
               ),
@@ -165,8 +144,8 @@ class _LyricsPageState extends State<LyricsPage> {
     return Container(
       width: 170,
       height: 170,
-      color: Colors.grey.shade800,
-      child: const Icon(Icons.music_note, color: Colors.white, size: 50),
+      color: Colors.grey.shade300,
+      child: const Icon(Icons.music_note, size: 50),
     );
   }
 
@@ -174,4 +153,3 @@ class _LyricsPageState extends State<LyricsPage> {
     return "${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}";
   }
 }
-//3

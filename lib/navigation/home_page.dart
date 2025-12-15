@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import '../widgets/app_drawer.dart';
 import '../navigation/lyrics_page.dart';
 import '../navigation/song_data.dart';
+import '../widgets/nav_bar.dart';
+import '../widgets/profile_page.dart';
 
 class HomePage extends StatefulWidget {
   final String firstname;
   final String lastname;
-  final String username; // username OR email
+  final String username;
   final String? email;
   final String? photoUrl;
 
@@ -24,34 +25,20 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  int _selectedIndex = 0;
   int? pressedIndex;
 
-  void logout() {
-    Navigator.pushReplacementNamed(context, '/login');
+  void _onNavTap(int index) {
+    setState(() => _selectedIndex = index);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home Page'),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-      ),
+    Widget bodyContent;
 
-      drawer: AppDrawer(
-        firstName: widget.firstname,
-        lastName: widget.lastname,
-        usernameOrEmail: widget.email ?? widget.username,
-        photoUrl: widget.photoUrl,
-        onLogout: logout,
-      ),
-
-      body: ListView.builder(
+    // HOME (Songs)
+    if (_selectedIndex == 0) {
+      bodyContent = ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: songs.length,
         itemBuilder: (context, index) {
@@ -67,69 +54,88 @@ class _HomePageState extends State<HomePage> {
                 MaterialPageRoute(builder: (_) => LyricsPage(song: song)),
               );
             },
-
             child: AnimatedScale(
-              scale: pressedIndex == index ? 0.97 : 1.0,
+              scale: pressedIndex == index ? 0.97 : 1,
               duration: const Duration(milliseconds: 120),
-
-              child: Container(
+              child: Card(
                 margin: const EdgeInsets.only(bottom: 14),
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E1E),
-                  borderRadius: BorderRadius.circular(12),
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
                 ),
-
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.asset(
-                        'assets/images/${song.imageUrl}',
-                        width: 70,
-                        height: 70,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+                color: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          'assets/images/${song.imageUrl}',
                           width: 70,
                           height: 70,
-                          color: Colors.grey,
-                          child: const Icon(Icons.music_note),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 70,
+                            height: 70,
+                            color: Colors.grey.shade300,
+                            child: const Icon(Icons.music_note),
+                          ),
                         ),
                       ),
-                    ),
-
-                    const SizedBox(width: 14),
-
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            song.title,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              song.title,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFB76E79),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            song.artist,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Colors.white70,
+                            const SizedBox(height: 4),
+                            Text(
+                              song.artist,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade700,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
           );
         },
+      );
+    }
+    // PROFILE
+    else {
+      bodyContent = ProfilePage(
+        firstname: widget.firstname,
+        lastname: widget.lastname,
+        username: widget.email ?? widget.username,
+        photoUrl: widget.photoUrl,
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Belle Music'),
+        backgroundColor: const Color(0xFFB76E79),
+      ),
+      body: bodyContent,
+      bottomNavigationBar: AppNavBar(
+        currentIndex: _selectedIndex,
+        onTap: _onNavTap,
       ),
     );
   }
 }
-//working fine 1
