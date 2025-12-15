@@ -1,26 +1,51 @@
 {
   "project_info": {
-    "project_number": "468408385936",
-    "project_id": "musicapp-f8971",
-    "storage_bucket": "musicapp-f8971.firebasestorage.app"
+    "project_number": "715032422450",
+    "project_id": "belle-music-app",
+    "storage_bucket": "belle-music-app.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:468408385936:android:97b60c09262bd8f72cb315",
+        "mobilesdk_app_id": "1:715032422450:android:f5f7b02cf26591e9ec742b",
         "android_client_info": {
-          "package_name": "com.example.app_music"
+          "package_name": "com.example.belle_music_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "715032422450-i2cnp23v2bjha78656ldif5vucuq0env.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.belle_music_app",
+            "certificate_hash": "865af280537e0b978c6d9b1a68a39cbe513649da"
+          }
+        },
+        {
+          "client_id": "715032422450-hv6uetnovhv8u3dmi91ecu673blshq7m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyAzsyUFHV6fhI1MmLqjAqrYO_2TYjGauPA"
+          "current_key": "AIzaSyASjkKMWOh3UXAXorWdYsXyCYYz7AtAfdY"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "715032422450-hv6uetnovhv8u3dmi91ecu673blshq7m.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "715032422450-63j0uuuvou5r9cfi7t1e08tjqgtqh5uf.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.appMusic"
+              }
+            }
+          ]
         }
       }
     }

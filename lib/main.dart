@@ -4,16 +4,26 @@ import 'firebase_options.dart';
 import 'package:device_preview/device_preview.dart';
 
 // Pages
-import 'package:app_music/signup.dart';
-import 'package:app_music/login.dart';
-import 'package:app_music/navigation/lyrics_page.dart';
-import 'package:app_music/models/song.dart';
+import 'login.dart';
+import 'signup.dart';
+import 'navigation/lyrics_page.dart';
+import 'models/song.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // runApp(DevicePreview(enabled: true, builder: (context) => const MyApp()));
+  // Only initialize Firebase if it hasn't been initialized yet
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } on FirebaseException catch (e) {
+    if (e.code != 'duplicate-app') {
+      rethrow;
+    }
+    // If Firebase is already initialized, ignore silently
+  }
+
   runApp(const MyApp());
 }
 
