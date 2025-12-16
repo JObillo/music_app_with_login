@@ -31,16 +31,36 @@ class _SignupPageState extends State<SignupPage> {
     final username = usernameController.text.trim();
     final password = passwordController.text.trim();
 
+    final nameRegex = RegExp(r'^[a-zA-Z]+$');
+
+    // 🔴 Empty fields validation
     if (firstname.isEmpty ||
         lastname.isEmpty ||
         username.isEmpty ||
         password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("All fields are required"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showError("All fields are required");
+      return;
+    }
+
+    // 🔴 Name validations (no numbers)
+    if (!nameRegex.hasMatch(firstname)) {
+      _showError("First name must contain letters only");
+      return;
+    }
+
+    if (!nameRegex.hasMatch(lastname)) {
+      _showError("Last name must contain letters only");
+      return;
+    }
+
+    if (!nameRegex.hasMatch(username)) {
+      _showError("Username must contain letters only");
+      return;
+    }
+
+    // 🔴 Password validation
+    if (password.length < 9) {
+      _showError("Password must be at least 9 characters long");
       return;
     }
 
@@ -52,9 +72,11 @@ class _SignupPageState extends State<SignupPage> {
           .doc(username);
 
       final doc = await docRef.get();
-      if (doc.exists) throw "Username already exists";
+      if (doc.exists) {
+        throw "Username already exists";
+      }
 
-      // 🔒 Hash the password
+      // 🔒 Hash password
       final hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
 
       await docRef.set({
@@ -79,12 +101,16 @@ class _SignupPageState extends State<SignupPage> {
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      _showError(e.toString());
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
   }
 
   @override
@@ -160,8 +186,11 @@ class _SignupPageState extends State<SignupPage> {
                             ? Icons.visibility
                             : Icons.visibility_off,
                       ),
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
                     ),
                   ),
                 ),
