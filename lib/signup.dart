@@ -84,11 +84,27 @@ class _SignupPageState extends State<SignupPage> {
     if (!validateFields()) return;
 
     final username = usernameController.text.trim();
-    final docRef = FirebaseFirestore.instance.collection('users').doc(username);
-    final doc = await docRef.get();
+    final email = emailController.text.trim();
 
-    if (doc.exists) {
+    // Check if username already exists
+    final usernameDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(username)
+        .get();
+
+    if (usernameDoc.exists) {
       _showError("Username already exists");
+      return;
+    }
+
+    // Check if email already used
+    final emailQuery = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: email)
+        .get();
+
+    if (emailQuery.docs.isNotEmpty) {
+      _showError("This email is already registered");
       return;
     }
 
@@ -105,17 +121,20 @@ class _SignupPageState extends State<SignupPage> {
 
     setState(() => _isLoading = true);
 
-    final sent = await sendOtpEmail(emailController.text.trim(), generatedOtp!);
+    final sent = await sendOtpEmail(email, generatedOtp!);
 
     setState(() => _isLoading = false);
 
     if (sent) {
-      _showOtpDialog(docRef);
+      _showOtpDialog(
+        FirebaseFirestore.instance.collection('users').doc(username),
+      );
     } else {
       _showError("Failed to send OTP. Try again.");
     }
   }
 
+  //12223212112
   Future<bool> sendOtpEmail(String toEmail, String otp) async {
     String username = "obillojericho8@gmail.com";
     String password = "wrhx neqv emth fssd";
@@ -401,6 +420,11 @@ class _SignupPageState extends State<SignupPage> {
               child: _isLoading
                   ? const CircularProgressIndicator(color: Colors.white)
                   : const Text("Signup"),
+            ),
+            TextButton(
+              onPressed: () =>
+                  Navigator.pushReplacementNamed(context, '/login'),
+              child: const Text("Already have an account? Login"),
             ),
           ],
         ),
