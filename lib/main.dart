@@ -6,6 +6,7 @@ import 'package:device_preview/device_preview.dart';
 // Pages
 import 'package:app_music/signup.dart';
 import 'package:app_music/login.dart';
+import 'package:app_music/navigation/home_page.dart';
 import 'package:app_music/navigation/lyrics_page.dart';
 import 'package:app_music/models/song.dart';
 
@@ -26,12 +27,20 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       builder: DevicePreview.appBuilder,
       initialRoute: '/login',
-
       routes: {
         '/login': (context) => const LoginPage(),
         '/signup': (context) => const SignupPage(),
+        '/home': (context) {
+          // Retrieve arguments passed from signup
+          final args =
+              ModalRoute.of(context)!.settings.arguments as Map<String, String>;
+          return HomePage(
+            firstname: args['firstname']!,
+            lastname: args['lastname']!,
+            username: args['username']!,
+          );
+        },
       },
-
       onGenerateRoute: (settings) {
         if (settings.name == '/lyrics') {
           final song = settings.arguments as Song;
@@ -39,7 +48,6 @@ class MyApp extends StatelessWidget {
         }
         return null;
       },
-
       theme: ThemeData(
         brightness: Brightness.dark,
         primaryColor: const Color(0xFF1877F2),
