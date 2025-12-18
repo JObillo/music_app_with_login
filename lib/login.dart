@@ -1,9 +1,10 @@
+import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:bcrypt/bcrypt.dart';
-import 'package:http/http.dart' as http;
+import 'package:mailer/mailer.dart';
+import 'package:mailer/smtp_server.dart';
 import 'navigation/home_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -16,33 +17,79 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
-
   final FocusNode usernameFocus = FocusNode();
   final FocusNode passwordFocus = FocusNode();
 
-  bool _isLoading = false; // username/password
-  bool _googleLoading = false; // google sign-in
+  bool _isLoading = false;
   bool _obscurePassword = true;
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String? generatedOtp;
+  int otpAttempts = 0;
+  DateTime? otpLockedUntil;
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
 
-  // =========================
-  // USERNAME / PASSWORD LOGIN
-  // =========================
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
+    );
+  }
+
+  Future<bool> sendOtpEmail(String toEmail, String otp) async {
+    String username = "obillojericho8@gmail.com";
+    String password = "wrhx neqv emth fssd"; // Your Gmail App Password
+
+    final smtpServer = gmail(username, password);
+    final message = Message()
+      ..from = Address(username, 'Belle Music App')
+      ..recipients.add(toEmail)
+      ..subject = 'Your OTP for Login'
+      ..text = 'Your OTP is: $otp';
+
+    try {
+      await send(message, smtpServer);
+      return true;
+    } catch (e) {
+      print("Failed to send OTP: $e");
+      return false;
+    }
+  }
+
+  Future<void> sendLoginSuccessEmail(String toEmail, String firstname) async {
+    String username = "obillojericho8@gmail.com";
+    String password = "cele kttw nbkb palg"; // App Password
+
+    final smtpServer = gmail(username, password);
+    final message = Message()
+      ..from = Address(username, 'Belle Music App')
+      ..recipients.add(toEmail)
+      ..subject = 'Successful Login to Belle Music App'
+      ..text =
+          'Hello $firstname,\n\nYou have successfully logged in to Music App.\n\nEnjoy!';
+
+    try {
+      await send(message, smtpServer);
+    } catch (e) {
+      print("Failed to send login email: $e");
+    }
+  }
+
   Future<void> login() async {
-    final username = usernameController.text.trim();
+    final input = usernameController.text.trim();
     final password = passwordController.text.trim();
 
-    if (username.isEmpty || password.isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please enter username and password."),
-          backgroundColor: Colors.red,
-        ),
+    if (input.isEmpty || password.isEmpty) {
+      _showError("Please enter username/email and password.");
+      return;
+    }
+
+    if (otpLockedUntil != null && DateTime.now().isBefore(otpLockedUntil!)) {
+      _showError(
+        "Too many failed OTP attempts. Try again after ${otpLockedUntil!.difference(DateTime.now()).inHours} hours.",
       );
       return;
     }
@@ -50,151 +97,224 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      final query = await _firestore
-          .collection('users')
-          .where('username', isEqualTo: username)
-          .limit(1)
-          .get();
+      DocumentSnapshot<Map<String, dynamic>>? userDoc;
+      String username = input;
 
-      if (query.docs.isEmpty) throw "User not found";
+      if (input.contains('@')) {
+        final query = await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: input)
+            .limit(1)
+            .get();
+        if (query.docs.isEmpty) throw "User not found";
+        userDoc = query.docs.first;
+        username = userDoc.id;
+      } else {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(input)
+            .get();
+        if (!doc.exists) throw "User not found";
+        userDoc = doc;
+      }
 
-      final data = query.docs.first.data();
+      final data = userDoc.data()!;
       final storedHash = data['password'].toString();
 
-      final isPasswordCorrect = storedHash.startsWith(r'$2')
-          ? BCrypt.checkpw(password, storedHash)
-          : password == storedHash;
+      bool isPasswordCorrect;
+      if (storedHash.startsWith(r'$2b$') || storedHash.startsWith(r'$2a$')) {
+        isPasswordCorrect = BCrypt.checkpw(password, storedHash);
+      } else {
+        isPasswordCorrect = password == storedHash;
+      }
 
       if (!isPasswordCorrect) throw "Wrong password";
 
-      if (!mounted) return;
+      generatedOtp = (Random().nextInt(900000) + 100000).toString();
+      otpAttempts = 0;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Welcome back, ${data['firstname']}!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      final sent = await sendOtpEmail(data['email'], generatedOtp!);
+      if (!sent) {
+        _showError("Failed to send OTP. Try again.");
+        return;
+      }
 
-      Future.delayed(const Duration(seconds: 1), () {
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => HomePage(
-              firstname: data['firstname'],
-              lastname: data['lastname'],
-              username: data['username'],
-            ),
-          ),
-        );
-      });
+      _showOtpDialog(data, username);
     } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Invalid username or password"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showError("Invalid username/email or password");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // =========================
-  // GOOGLE SIGN-IN
-  // =========================
-  Future<void> loginWithGoogle() async {
-    setState(() => _googleLoading = true);
+  void _showOtpDialog(Map<String, dynamic> userData, String username) {
+    final otpController = TextEditingController();
+    int resendAttempts = 0;
+    DateTime? resendLockedUntil;
+    bool isVerifying = false;
+    bool isResending = false;
+    final parentContext = context;
 
-    try {
-      final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return;
+    showDialog(
+      barrierDismissible: false,
+      context: parentContext,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text("Enter OTP"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: otpController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: "Enter OTP"),
+              ),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: isResending
+                    ? null
+                    : () async {
+                        setState(() => isResending = true);
 
-      final googleAuth = await googleUser.authentication;
+                        if (resendLockedUntil != null &&
+                            DateTime.now().isBefore(resendLockedUntil!)) {
+                          _showError("Too many OTP requests. Try again later.");
+                          setState(() => isResending = false);
+                          return;
+                        }
 
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
+                        if (resendAttempts >= 3) {
+                          resendLockedUntil = DateTime.now().add(
+                            const Duration(hours: 2),
+                          );
+                          _showError(
+                            "Resend limit reached. Try again in 2 hours.",
+                          );
+                          setState(() => isResending = false);
+                          return;
+                        }
 
-      final userCredential = await _auth.signInWithCredential(credential);
-      final user = userCredential.user;
-      if (user == null) return;
+                        generatedOtp = (Random().nextInt(900000) + 100000)
+                            .toString();
+                        final sent = await sendOtpEmail(
+                          userData['email'],
+                          generatedOtp!,
+                        );
 
-      final userRef = _firestore.collection('users').doc(user.uid);
+                        if (sent) {
+                          resendAttempts++;
+                          _showSuccess(
+                            "OTP resent. Attempt $resendAttempts of 3",
+                          );
+                        } else {
+                          _showError("Failed to resend OTP. Try again.");
+                        }
 
-      if (!(await userRef.get()).exists) {
-        await userRef.set({
-          'firstname': user.displayName?.split(' ').first ?? 'Google',
-          'lastname': user.displayName?.split(' ').skip(1).join(' ') ?? 'User',
-          'username': user.email,
-          'email': user.email,
-          'provider': 'google',
-          'createdAt': Timestamp.now(),
-        });
-      }
-
-      // USER TOKEN RETRIEVAL
-      final token = await user.getIdToken();
-      debugPrint('Firebase User Token: $token');
-
-      // API INTEGRATION
-      if (token != null) {
-        await callProtectedApi(token);
-      }
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Welcome, ${user.displayName?.split(' ').first ?? 'User'}!',
+                        setState(() => isResending = false);
+                      },
+                child: Row(
+                  children: [
+                    if (isResending)
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    if (!isResending)
+                      const Icon(
+                        Icons.refresh,
+                        size: 16,
+                        color: Color(0xFFB76E79),
+                      ),
+                    const SizedBox(width: 4),
+                    const Text(
+                      "Resend OTP",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFB76E79),
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          backgroundColor: Colors.green,
-        ),
-      );
+          actions: [
+            ElevatedButton(
+              onPressed: isVerifying
+                  ? null
+                  : () async {
+                      setState(() => isVerifying = true);
+                      await Future.delayed(const Duration(milliseconds: 500));
 
-      Future.delayed(const Duration(seconds: 1), () {
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => HomePage(
-              firstname: user.displayName?.split(' ').first ?? 'Google',
-              lastname:
-                  user.displayName?.split(' ').skip(1).join(' ') ?? 'User',
-              username: user.email ?? '',
-              email: user.email,
-              photoUrl: user.photoURL,
+                      if (otpController.text.trim() == generatedOtp) {
+                        Navigator.of(context).pop();
+                        _showSuccess("Welcome ${userData['firstname']}");
+
+                        if (!mounted) return;
+                        Future.delayed(
+                          const Duration(milliseconds: 300),
+                          () async {
+                            await sendLoginSuccessEmail(
+                              userData['email'],
+                              userData['firstname'],
+                            );
+                            Navigator.of(parentContext).pushReplacement(
+                              MaterialPageRoute(
+                                builder: (_) => HomePage(
+                                  firstname: userData['firstname'],
+                                  lastname: userData['lastname'],
+                                  username: username,
+                                  email: userData['email'],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      } else {
+                        otpAttempts++;
+                        if (otpAttempts >= 3) {
+                          otpLockedUntil = DateTime.now().add(
+                            const Duration(hours: 2),
+                          );
+                          Navigator.of(context).pop();
+                          _showError(
+                            "Too many failed attempts. Try again in 2 hours.",
+                          );
+                        } else {
+                          _showError(
+                            "Incorrect OTP. Attempt $otpAttempts of 3",
+                          );
+                        }
+                      }
+                      setState(() => isVerifying = false);
+                    },
+              child: isVerifying
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text("Verify"),
             ),
-          ),
-        );
-      });
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Google Sign-In Failed: $e")));
-    } finally {
-      if (mounted) setState(() => _googleLoading = false);
-    }
-  }
-
-  // =========================
-  // API FUNCTION
-  // =========================
-  Future<void> callProtectedApi(String token) async {
-    final response = await http.get(
-      Uri.parse('https://jsonplaceholder.typicode.com/posts/1'),
-      headers: {'Authorization': 'Bearer $token'},
+          ],
+        ),
+      ),
     );
-
-    debugPrint(response.body);
   }
 
   void hideKeyboard() => FocusScope.of(context).unfocus();
+
+  @override
+  void dispose() {
+    usernameController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -221,14 +341,14 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-
                   TextField(
                     controller: usernameController,
                     focusNode: usernameFocus,
-                    decoration: const InputDecoration(labelText: "Username"),
+                    decoration: const InputDecoration(
+                      labelText: "Username/Email",
+                    ),
                   ),
                   const SizedBox(height: 16),
-
                   TextField(
                     controller: passwordController,
                     focusNode: passwordFocus,
@@ -248,7 +368,6 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -258,23 +377,7 @@ class _LoginPageState extends State<LoginPage> {
                           : const Text("Login"),
                     ),
                   ),
-
-                  const SizedBox(height: 12),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _googleLoading ? null : loginWithGoogle,
-                      icon: Image.asset(
-                        'assets/images/google_logo.png',
-                        height: 24,
-                      ),
-                      label: const Text("Sign in with Google"),
-                    ),
-                  ),
-
                   const SizedBox(height: 16),
-
                   TextButton(
                     onPressed: () =>
                         Navigator.pushReplacementNamed(context, '/signup'),
