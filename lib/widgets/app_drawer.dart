@@ -6,7 +6,8 @@ import '../navigation/add_song.dart';
 class AppDrawer extends StatelessWidget {
   final String firstName;
   final String lastName;
-  final String usernameOrEmail;
+  final String username;
+  final String email;
   final String? photoUrl;
   final VoidCallback? onLogout;
   final VoidCallback? goToFavorites;
@@ -15,7 +16,8 @@ class AppDrawer extends StatelessWidget {
     super.key,
     required this.firstName,
     required this.lastName,
-    required this.usernameOrEmail,
+    required this.username,
+    required this.email,
     this.photoUrl,
     this.onLogout,
     this.goToFavorites,
@@ -46,16 +48,11 @@ class AppDrawer extends StatelessWidget {
         children: [
           Container(
             color: const Color(0xFF1F1F1F),
-            padding: const EdgeInsets.only(
-              top: 50,
-              bottom: 20,
-              left: 16,
-              right: 16,
-            ),
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 30,
+                  radius: 35,
                   backgroundColor: const Color(0xFF1877F2),
                   backgroundImage: photoUrl != null
                       ? NetworkImage(photoUrl!)
@@ -66,14 +63,14 @@ class AppDrawer extends StatelessWidget {
                               ? firstName[0].toUpperCase()
                               : 'U',
                           style: const TextStyle(
-                            fontSize: 24,
-                            color: Colors.white,
+                            fontSize: 28,
                             fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
                         )
                       : null,
                 ),
-                const SizedBox(width: 15),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,17 +78,25 @@ class AppDrawer extends StatelessWidget {
                       Text(
                         '$firstName $lastName',
                         style: const TextStyle(
-                          color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        usernameOrEmail,
+                        '@$username',
                         style: const TextStyle(
+                          fontSize: 14,
                           color: Colors.white70,
-                          fontSize: 10,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        email,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white60,
                         ),
                       ),
                     ],
@@ -117,7 +122,7 @@ class AppDrawer extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => AddSongPage(username: usernameOrEmail),
+                  builder: (_) => AddSongPage(username: username),
                 ),
               );
             },
@@ -134,6 +139,7 @@ class AppDrawer extends StatelessWidget {
                 goToFavorites!();
               },
             ),
+          const Divider(color: Colors.white24),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.white),
             title: const Text('Logout', style: TextStyle(color: Colors.white)),

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/song.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'lyrics_page.dart';
 
 class FavoritesPage extends StatefulWidget {
   final String username;
   final String? email;
+  final String userId; // Unique ID for Firestore (username)
   final Set<String> currentFavorites;
   final Function(Set<String>)? onFavoriteChanged;
 
@@ -14,6 +14,7 @@ class FavoritesPage extends StatefulWidget {
     super.key,
     required this.username,
     this.email,
+    required this.userId,
     required this.currentFavorites,
     this.onFavoriteChanged,
   });
@@ -33,14 +34,11 @@ class _FavoritesPageState extends State<FavoritesPage> {
   }
 
   Future<void> toggleFavorite(Song song) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
     final favRef = FirebaseFirestore.instance
         .collection('users')
-        .doc(user.uid)
+        .doc(widget.userId) // Use userId instead of FirebaseAuth
         .collection('favorites')
-        .doc(song.id); // Use ID
+        .doc(song.id);
 
     final doc = await favRef.get();
     if (doc.exists) {
@@ -70,17 +68,12 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      return const Center(child: Text('Not logged in'));
-    }
-
     return Scaffold(
       appBar: AppBar(title: const Text('Favorites')),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
-            .doc(user.uid)
+            .doc(widget.userId) // Firestore user document
             .collection('favorites')
             .orderBy('timestamp', descending: true)
             .snapshots(),
@@ -95,7 +88,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
             itemCount: docs.length,
             itemBuilder: (context, index) {
               final doc = docs[index];
-              final song = Song.fromDocument(doc); // Convert using fromDocument
+              final song = Song.fromDocument(doc);
 
               return GestureDetector(
                 onTapDown: (_) => setState(() => pressedIndex = index),

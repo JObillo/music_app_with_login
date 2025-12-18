@@ -74,7 +74,7 @@ class _LyricsPageState extends State<LyricsPage> {
     final song = widget.song;
 
     return Scaffold(
-      appBar: AppBar(title: Text(song.title)),
+      appBar: AppBar(title: Text("Lyrics Page")),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Column(

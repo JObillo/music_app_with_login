@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/app_drawer.dart';
 import '../models/song.dart';
 import 'favorites_page.dart';
@@ -68,12 +67,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> toggleFavorite(Song song) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
+    // Use username as the Firestore user ID
     final favRef = FirebaseFirestore.instance
         .collection('users')
-        .doc(user.uid)
+        .doc(widget.username) // <-- username instead of FirebaseAuth
         .collection('favorites')
         .doc(song.id);
 
@@ -89,7 +86,10 @@ class _HomePageState extends State<HomePage> {
         ).showSnackBar(const SnackBar(content: Text('Removed from favorites')));
       }
     } else {
-      await favRef.set(song.toMap());
+      await favRef.set({
+        ...song.toMap(),
+        'timestamp': FieldValue.serverTimestamp(), // important for ordering
+      });
       setState(() {
         favoriteIds.add(song.id);
       });
@@ -124,7 +124,10 @@ class _HomePageState extends State<HomePage> {
         drawer: AppDrawer(
           firstName: widget.firstname,
           lastName: widget.lastname,
-          usernameOrEmail: widget.email ?? widget.username,
+          username: widget.username, // ✅ pass username
+          email:
+              widget.email ??
+              '', // ✅ pass email (fallback to empty string if null)
           photoUrl: widget.photoUrl,
           onLogout: logout,
           goToFavorites: () {
@@ -133,7 +136,8 @@ class _HomePageState extends State<HomePage> {
               MaterialPageRoute(
                 builder: (_) => FavoritesPage(
                   username: widget.username,
-                  email: widget.email,
+                  email: widget.email ?? '',
+                  userId: widget.username, // or whatever unique ID you use
                   currentFavorites: favoriteIds,
                   onFavoriteChanged: (updatedFavorites) {
                     setState(() {
@@ -145,6 +149,7 @@ class _HomePageState extends State<HomePage> {
             );
           },
         ),
+
         body: Column(
           children: [
             Padding(
