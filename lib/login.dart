@@ -29,12 +29,14 @@ class _LoginPageState extends State<LoginPage> {
   DateTime? otpLockedUntil;
 
   void _showError(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
   void _showSuccess(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.green),
     );
@@ -55,6 +57,7 @@ class _LoginPageState extends State<LoginPage> {
       await send(message, smtpServer);
       return true;
     } catch (e) {
+      // ignore: avoid_print
       print("Failed to send OTP: $e");
       return false;
     }
@@ -75,6 +78,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       await send(message, smtpServer);
     } catch (e) {
+      // ignore: avoid_print
       print("Failed to send login email: $e");
     }
   }
@@ -88,9 +92,10 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    if (otpLockedUntil != null && DateTime.now().isBefore(otpLockedUntil!)) {
+    final lockedUntil = otpLockedUntil;
+    if (lockedUntil != null && DateTime.now().isBefore(lockedUntil)) {
       _showError(
-        "Too many failed OTP attempts. Try again after ${otpLockedUntil!.difference(DateTime.now()).inHours} hours.",
+        "Too many failed OTP attempts. Try again after ${lockedUntil.difference(DateTime.now()).inHours} hours.",
       );
       return;
     }
@@ -163,7 +168,7 @@ class _LoginPageState extends State<LoginPage> {
     bool isVerifying = false;
     bool isResending = false;
 
-    final parentContext = context; // Capture parent context here
+    final parentContext = context; // capture the parent context (LoginPage)
 
     showDialog(
       barrierDismissible: false,
@@ -189,9 +194,7 @@ class _LoginPageState extends State<LoginPage> {
 
                         if (resendLockedUntil != null &&
                             DateTime.now().isBefore(resendLockedUntil!)) {
-                          _showError(
-                            "Too many OTP requests. Try again in ${resendLockedUntil!.difference(DateTime.now()).inHours} hours.",
-                          );
+                          _showError("Too many OTP requests. Try again later.");
                           setState(() => isResending = false);
                           return;
                         }
@@ -207,7 +210,6 @@ class _LoginPageState extends State<LoginPage> {
                           return;
                         }
 
-                        // Generate new OTP
                         generatedOtp = (Random().nextInt(900000) + 100000)
                             .toString();
                         final sent = await sendOtpEmail(
@@ -252,15 +254,6 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
               ),
-              if (otpLockedUntil != null &&
-                  DateTime.now().isBefore(otpLockedUntil!))
-                const Padding(
-                  padding: EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    "Too many failed attempts. Try again later.",
-                    style: TextStyle(color: Colors.red),
-                  ),
-                ),
             ],
           ),
           actions: [
@@ -269,31 +262,27 @@ class _LoginPageState extends State<LoginPage> {
                   ? null
                   : () async {
                       setState(() => isVerifying = true);
-                      await Future.delayed(const Duration(milliseconds: 500));
 
                       if (otpController.text.trim() == generatedOtp) {
-                        Navigator.of(context).pop(); // close OTP dialog
+                        if (!mounted) return;
+                        Navigator.of(parentContext).pop(); // close OTP dialog
                         _showSuccess("Welcome ${userData['firstname']}");
 
-                        // Use parentContext here
+                        await sendLoginSuccessEmail(
+                          userData['email'],
+                          userData['firstname'],
+                        );
+
                         if (!mounted) return;
-                        Future.delayed(
-                          const Duration(milliseconds: 300),
-                          () async {
-                            await sendLoginSuccessEmail(
-                              userData['email'],
-                              userData['firstname'],
-                            );
-                            Navigator.of(parentContext).pushReplacement(
-                              MaterialPageRoute(
-                                builder: (_) => HomePage(
-                                  firstname: userData['firstname'],
-                                  lastname: userData['lastname'],
-                                  username: username,
-                                ),
-                              ),
-                            );
-                          },
+                        Navigator.of(parentContext).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (_) => HomePage(
+                              firstname: userData['firstname'],
+                              lastname: userData['lastname'],
+                              username: username,
+                              email: userData['email'],
+                            ),
+                          ),
                         );
                       } else {
                         otpAttempts++;
@@ -301,7 +290,8 @@ class _LoginPageState extends State<LoginPage> {
                           otpLockedUntil = DateTime.now().add(
                             const Duration(hours: 2),
                           );
-                          Navigator.of(context).pop();
+                          if (!mounted) return;
+                          Navigator.of(parentContext).pop();
                           _showError(
                             "Too many failed attempts. Try again in 2 hours.",
                           );
@@ -311,6 +301,7 @@ class _LoginPageState extends State<LoginPage> {
                           );
                         }
                       }
+
                       setState(() => isVerifying = false);
                     },
               child: isVerifying
@@ -360,7 +351,9 @@ class _LoginPageState extends State<LoginPage> {
                     FocusScope.of(context).requestFocus(passwordFocus);
                   },
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(labelText: "Username"),
+                  decoration: const InputDecoration(
+                    labelText: "Username or Email",
+                  ),
                 ),
                 const SizedBox(height: 20),
                 TextField(
