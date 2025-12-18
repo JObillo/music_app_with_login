@@ -290,6 +290,7 @@ class _SignupPageState extends State<SignupPage> {
                     decoration: const InputDecoration(labelText: "Last Name"),
                   ),
                   const SizedBox(height: 16),
+
                   TextField(
                     controller: usernameController,
                     decoration: const InputDecoration(labelText: "Username"),
@@ -301,6 +302,7 @@ class _SignupPageState extends State<SignupPage> {
                     decoration: const InputDecoration(labelText: "Email"),
                   ),
                   const SizedBox(height: 16),
+
                   TextField(
                     controller: passwordController,
                     obscureText: _obscurePassword,
@@ -323,6 +325,7 @@ class _SignupPageState extends State<SignupPage> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : signup,
+
                       child: _isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
                           : const Text("Sign Up"),

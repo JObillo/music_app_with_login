@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/song.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class LyricsPage extends StatefulWidget {
   final Song song;
@@ -11,58 +11,71 @@ class LyricsPage extends StatefulWidget {
 }
 
 class _LyricsPageState extends State<LyricsPage> {
-  final AudioPlayer player = AudioPlayer();
+  late YoutubePlayerController _controller;
+  bool isPlaying = false;
   Duration current = Duration.zero;
   Duration total = Duration.zero;
-  bool isPlaying = false;
 
   @override
   void initState() {
     super.initState();
 
-    player.onDurationChanged.listen((d) {
-      setState(() => total = d);
+    final videoId = YoutubePlayer.convertUrlToId(widget.song.youtubeUrl);
+
+    _controller = YoutubePlayerController(
+      initialVideoId: videoId ?? '',
+      flags: const YoutubePlayerFlags(
+        autoPlay: true,
+        mute: false,
+        disableDragSeek: false,
+        hideControls: true,
+        hideThumbnail: true,
+        isLive: false,
+      ),
+    );
+
+    _controller.addListener(() {
+      if (!mounted) return;
+      final value = _controller.value;
+      setState(() {
+        isPlaying = value.isPlaying;
+        current = value.position;
+        total = value.metaData.duration;
+      });
     });
-
-    player.onPositionChanged.listen((p) {
-      setState(() => current = p);
-    });
-
-    playSong();
-  }
-
-  void playSong() async {
-    await player.play(AssetSource('songs/${widget.song.audioUrl}'));
-    setState(() => isPlaying = true);
   }
 
   void togglePlayPause() {
     if (isPlaying) {
-      player.pause();
+      _controller.pause();
     } else {
-      player.resume();
+      _controller.play();
     }
     setState(() => isPlaying = !isPlaying);
   }
 
   @override
   void dispose() {
-    player.stop();
-    player.dispose();
+    _controller.dispose();
     super.dispose();
+  }
+
+  String formatTime(Duration d) {
+    return "${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}";
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final song = widget.song;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F3F2),
-      appBar: AppBar(backgroundColor: const Color(0xFFB76E79)),
+      appBar: AppBar(title: Text(song.title)),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Column(
           children: [
+            // Song image
             ClipRRect(
               borderRadius: BorderRadius.circular(14),
               child: Image.asset(
@@ -70,67 +83,71 @@ class _LyricsPageState extends State<LyricsPage> {
                 width: 170,
                 height: 170,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => placeholderImage(),
+                errorBuilder: (_, __, ___) => placeholderImage(theme),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Text(
               song.title,
-              style: const TextStyle(
-                fontSize: 22,
+              style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Color(0xFFB76E79),
               ),
               textAlign: TextAlign.center,
             ),
-            Text(
-              song.artist,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-            ),
-            const SizedBox(height: 6),
+            Text(song.artist, style: theme.textTheme.bodySmall),
+            const SizedBox(height: 10),
+
+            // Play/Pause Button
             IconButton(
               icon: Icon(
                 isPlaying
                     ? Icons.pause_circle_filled
                     : Icons.play_circle_filled,
                 size: 55,
-                color: const Color(0xFFB76E79),
+                color: theme.primaryColor,
               ),
               onPressed: togglePlayPause,
             ),
-            SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: 3,
-                activeTrackColor: const Color(0xFFB76E79),
-                inactiveTrackColor: Colors.grey.shade400,
-                thumbColor: const Color(0xFFB76E79),
+
+            // Progress Bar
+            if (total.inSeconds > 0)
+              Column(
+                children: [
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 3,
+                      activeTrackColor: theme.primaryColor,
+                      inactiveTrackColor: theme.primaryColor.withOpacity(0.3),
+                      thumbColor: theme.primaryColor,
+                    ),
+                    child: Slider(
+                      min: 0,
+                      max: total.inSeconds.toDouble(),
+                      value: current.inSeconds.toDouble().clamp(
+                        0,
+                        total.inSeconds.toDouble(),
+                      ),
+                      onChanged: (value) {
+                        _controller.seekTo(Duration(seconds: value.toInt()));
+                      },
+                    ),
+                  ),
+                  Text(
+                    "${formatTime(current)} / ${formatTime(total)}",
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
               ),
-              child: Slider(
-                min: 0,
-                max: total.inSeconds.toDouble(),
-                value: current.inSeconds.toDouble().clamp(
-                  0,
-                  total.inSeconds.toDouble(),
-                ),
-                onChanged: (value) {
-                  player.seek(Duration(seconds: value.toInt()));
-                },
-              ),
-            ),
-            Text(
-              "${formatTime(current)} / ${formatTime(total)}",
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
-            ),
-            const SizedBox(height: 12),
+
+            // Hidden YouTube player (audio only)
+            SizedBox(height: 0, child: YoutubePlayer(controller: _controller)),
+
+            // Lyrics scroll
             Expanded(
               child: SingleChildScrollView(
                 child: Text(
                   song.lyrics,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    height: 1.55,
-                    color: Colors.black87,
-                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
                 ),
               ),
             ),
@@ -140,16 +157,16 @@ class _LyricsPageState extends State<LyricsPage> {
     );
   }
 
-  Widget placeholderImage() {
+  Widget placeholderImage(ThemeData theme) {
     return Container(
       width: 170,
       height: 170,
-      color: Colors.grey.shade300,
-      child: const Icon(Icons.music_note, size: 50),
+      color: theme.cardColor,
+      child: Icon(
+        Icons.music_note,
+        color: theme.primaryColor.withOpacity(0.6),
+        size: 50,
+      ),
     );
-  }
-
-  String formatTime(Duration d) {
-    return "${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}";
   }
 }

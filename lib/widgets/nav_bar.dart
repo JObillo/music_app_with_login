@@ -2,22 +2,26 @@ import 'package:flutter/material.dart';
 
 class AppNavBar extends StatelessWidget {
   final int currentIndex;
-  final ValueChanged<int> onTap;
-
+  final Function(int) onTap;
   const AppNavBar({super.key, required this.currentIndex, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return BottomNavigationBar(
       currentIndex: currentIndex,
       onTap: onTap,
-      backgroundColor: Colors.white,
-      selectedItemColor: const Color(0xFFB76E79),
-      unselectedItemColor: Colors.grey.shade600,
-      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
       type: BottomNavigationBarType.fixed,
+      selectedItemColor: theme.primaryColor,
+      unselectedItemColor: Colors.grey,
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+        BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Add'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.favorite), // changed from thumb_up
+          label: 'Favorites',
+        ),
         BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
       ],
     );

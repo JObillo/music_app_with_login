@@ -309,6 +309,8 @@ class _LoginPageState extends State<LoginPage> {
 
   void hideKeyboard() => FocusScope.of(context).unfocus();
 
+  // SAME IMPORTS AS BEFORE (UNCHANGED)
+
   @override
   void dispose() {
     usernameController.dispose();
@@ -349,6 +351,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
+
                   TextField(
                     controller: passwordController,
                     focusNode: passwordFocus,
@@ -378,6 +381,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
+
                   TextButton(
                     onPressed: () =>
                         Navigator.pushReplacementNamed(context, '/signup'),
