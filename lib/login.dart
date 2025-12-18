@@ -80,11 +80,11 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> login() async {
-    final username = usernameController.text.trim();
+    final input = usernameController.text.trim(); // username OR email
     final password = passwordController.text.trim();
 
-    if (username.isEmpty || password.isEmpty) {
-      _showError("Please enter username and password.");
+    if (input.isEmpty || password.isEmpty) {
+      _showError("Please enter username/email and password.");
       return;
     }
 
@@ -98,14 +98,34 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(username)
-          .get();
+      DocumentSnapshot<Map<String, dynamic>>? userDoc;
+      String username = input;
 
-      if (!doc.exists) throw "User not found";
+      // 🔹 CASE 1: Login using EMAIL
+      if (input.contains('@')) {
+        final query = await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: input)
+            .limit(1)
+            .get();
 
-      final data = doc.data()!;
+        if (query.docs.isEmpty) throw "User not found";
+
+        userDoc = query.docs.first;
+        username = userDoc.id; // 🔥 actual username
+      }
+      // 🔹 CASE 2: Login using USERNAME
+      else {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(input)
+            .get();
+
+        if (!doc.exists) throw "User not found";
+        userDoc = doc;
+      }
+
+      final data = userDoc.data()!;
       final storedHash = data['password'].toString();
 
       bool isPasswordCorrect;
@@ -128,9 +148,9 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      _showOtpDialog(data, username); // Pass username as well
+      _showOtpDialog(data, username); // 🔥 correct username always
     } catch (_) {
-      _showError("Invalid username or password");
+      _showError("Invalid username/email or password");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
